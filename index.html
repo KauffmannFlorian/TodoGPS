@@ -178,12 +178,28 @@ async function geocode(loc){
   if(!loc)return null;
   const key=loc.toLowerCase().trim();
   if(geocodeCache[key])return geocodeCache[key];
+  // 1. Essai Nominatim
   try{
     const url=`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(loc+', Dubai, UAE')}&format=json&limit=1`;
     const res=await fetch(url,{headers:{'User-Agent':'TodoGPS/1.0 personal-app'}});
     const data=await res.json();
     if(data&&data[0]){
       const coords={lat:parseFloat(data[0].lat),lon:parseFloat(data[0].lon)};
+      geocodeCache[key]=coords;
+      return coords;
+    }
+  }catch(e){}
+  // 2. Fallback Claude API
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:60,
+        messages:[{role:'user',content:`Coordonnées GPS précises de "${loc}" à Dubai UAE. JSON uniquement sans backticks: {"lat":0.0,"lon":0.0}`}]})
+    });
+    const d=await res.json();
+    const parsed=JSON.parse(d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim());
+    if(parsed.lat&&parsed.lon){
+      const coords={lat:parsed.lat,lon:parsed.lon};
       geocodeCache[key]=coords;
       return coords;
     }
@@ -236,6 +252,7 @@ async function startGPS(){
     {enableHighAccuracy:true,maximumAge:15000,timeout:15000}
   );
   gpsActive=true;
+  notifiedIds=new Set(); // reset pour re-notifier si déjà proche
   render();
 }
 function stopGPS(){
@@ -258,10 +275,14 @@ async function checkProximity(){
   const withLoc=tasks.filter(t=>t.loc&&!t.done);
   let changed=false;
   for(const task of withLoc){
-    if(!task.coords)task.coords=await geocode(task.loc);
+    if(!task.coords){
+      task.coords=await geocode(task.loc);
+      console.log(`Geocode "${task.loc}":`,task.coords);
+    }
     if(task.coords){
       const d=Math.round(haversine(userPos.lat,userPos.lon,task.coords.lat,task.coords.lon));
       task.dist=d;
+      console.log(`Distance "${task.text}": ${d}m (seuil: ${RADIUS}m)`);
       const was=task.nearby;
       task.nearby=d<=RADIUS;
       if(task.nearby&&!was&&!notifiedIds.has(task.id)){

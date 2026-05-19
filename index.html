@@ -4,8 +4,6 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Todo GPS</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F5F5F7;color:#1D1D1F;min-height:100vh}
@@ -56,8 +54,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .add-row input:focus{border-color:#007AFF}
 .add-row3{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .add-row3 select{border:1px solid #E5E5EA;border-radius:8px;padding:8px 10px;font-size:13px;background:#fff;font-family:inherit;outline:none}
-.btn-map{border:1px solid #E5E5EA;border-radius:8px;padding:8px 12px;font-size:13px;color:#86868B;background:#fff;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s;width:100%;text-align:left}
-.btn-map:hover{background:#F2F2F7;border-color:#C7C7CC}
+.btn-map{border:1px solid #E5E5EA;border-radius:8px;padding:9px 12px;font-size:13px;color:#86868B;background:#fff;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s;width:100%;text-align:left}
+.btn-map:hover{background:#F2F2F7}
 .btn-map.selected{background:#E8F9EE;border-color:#30D158;color:#1A5C2E}
 .btn-add{border:1px solid #007AFF;border-radius:8px;padding:8px 16px;font-size:14px;color:#007AFF;background:#E8F0FF;cursor:pointer;font-weight:500;font-family:inherit;margin-left:auto}
 .btn-add:hover{background:#CCE0FF}
@@ -68,14 +66,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .map-header{padding:14px 16px 10px;display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0}
 .map-title{font-size:15px;font-weight:600}
 .map-hint{font-size:12px;color:#86868B;margin-top:2px}
-.btn-close-map{background:#F2F2F7;border:none;border-radius:50%;width:28px;height:28px;font-size:14px;cursor:pointer;color:#86868B;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-#map-container{height:55vh;flex:1}
+.btn-close-map{background:#F2F2F7;border:none;border-radius:50%;width:30px;height:30px;font-size:14px;cursor:pointer;color:#86868B;flex-shrink:0}
+.map-toolbar{padding:8px 16px;display:flex;gap:6px;flex-shrink:0;border-bottom:1px solid #E5E5EA}
+.btn-zoom{border:1px solid #E5E5EA;border-radius:8px;padding:6px 12px;font-size:15px;background:#fff;cursor:pointer;font-family:inherit;font-weight:600}
+.btn-zoom:hover{background:#F2F2F7}
+.btn-center-gps{border:1px solid #007AFF;border-radius:8px;padding:6px 12px;font-size:12px;background:#E8F0FF;color:#007AFF;cursor:pointer;font-family:inherit;margin-left:auto}
+#map-canvas{display:block;cursor:crosshair;touch-action:none;flex:1;width:100%;min-height:300px}
 .map-footer{padding:12px 16px;display:flex;gap:8px;align-items:center;border-top:1px solid #E5E5EA;flex-shrink:0}
 .map-picked{font-size:13px;color:#86868B;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .map-picked.ready{color:#1A5C2E;font-weight:500}
 .btn-confirm-map{border:1px solid #007AFF;border-radius:8px;padding:9px 20px;font-size:14px;color:#007AFF;background:#E8F0FF;cursor:pointer;font-weight:500;font-family:inherit;white-space:nowrap;flex-shrink:0}
-.btn-confirm-map:disabled{opacity:.35;cursor:default}
-/* Pills */
+.btn-confirm-map:disabled{opacity:.35;cursor:default;background:#F2F2F7;border-color:#C7C7CC;color:#86868B}
 .cpill{font-size:11px;padding:3px 9px;border-radius:999px;flex-shrink:0;font-weight:500}
 .cat-perso{background:#EDEDF8;color:#4A3F8C}
 .cat-travail{background:#FEF3E2;color:#7A4D0A}
@@ -119,15 +120,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div class="map-modal hidden" id="map-modal">
   <div class="map-sheet">
     <div class="map-header">
-      <div>
-        <div class="map-title">Choisir un lieu</div>
-        <div class="map-hint">Appuie sur la carte pour placer le repère</div>
-      </div>
+      <div><div class="map-title">Choisir un lieu</div><div class="map-hint">Appuie sur la carte pour épingler</div></div>
       <button class="btn-close-map" onclick="closeMap()">✕</button>
     </div>
-    <div id="map-container"></div>
+    <div class="map-toolbar">
+      <button class="btn-zoom" onclick="mapZoom(1)">＋</button>
+      <button class="btn-zoom" onclick="mapZoom(-1)">－</button>
+      <button class="btn-center-gps" onclick="mapCenterGPS()">📍 Ma position</button>
+    </div>
+    <canvas id="map-canvas"></canvas>
     <div class="map-footer">
-      <span class="map-picked" id="map-picked">Aucun lieu sélectionné</span>
+      <span class="map-picked" id="map-picked">Appuie sur la carte</span>
       <button class="btn-confirm-map" id="btn-confirm-map" onclick="confirmMap()" disabled>Confirmer</button>
     </div>
   </div>
@@ -157,76 +160,239 @@ const MI={matin:{bg:'#FEF3E2',icon:'🌅'},apresmidi:{bg:'#E8F0FF',icon:'☀️'
 let tasks=[], nextId=1, currentTab='focus', saveTimer=null;
 let gpsActive=false, gpsWatcher=null, userPos=null, currentPlaceName=null;
 let notifiedIds=new Set();
-let leafletMap=null, pickedMarker=null, pickedCoords=null, pickedName=null;
 let newTaskCoords=null, newTaskLocName=null;
 
-// ─── Storage ─────────────────────────────────────────────────
-function loadData(){
-  try{
-    const raw=localStorage.getItem('todo_gps_v2');
-    if(raw){const d=JSON.parse(raw);tasks=d.tasks||[];nextId=d.nextId||tasks.length+1;}
-    else{
-      tasks=[
-        {id:1,text:"Faire la demande de Move-in permit",cat:"perso",moment:"matin",locName:"Al Yalayis 2",coords:null,nearby:false,dist:null,inFocus:true,done:false},
-        {id:2,text:"Acheter médicaments",cat:"sante",moment:"apresmidi",locName:"",coords:null,nearby:false,dist:null,inFocus:true,done:false},
-        {id:3,text:"Faire les courses",cat:"courses",moment:"soir",locName:"",coords:null,nearby:false,dist:null,inFocus:false,done:false},
-        {id:4,text:"Appeler assurance",cat:"perso",moment:"matin",locName:"",coords:null,nearby:false,dist:null,inFocus:false,done:false},
-      ];
-      nextId=5;
-    }
-  }catch(e){tasks=[];nextId=1;}
-  setSave('Sauvegardé');
-  render();
-}
-function saveData(){
-  setSave('Sauvegarde...');
-  try{localStorage.setItem('todo_gps_v2',JSON.stringify({tasks,nextId}));setSave('✓ Sauvegardé');}
-  catch(e){setSave('Erreur');}
-}
-function scheduleSave(){if(saveTimer)clearTimeout(saveTimer);setSave('...');saveTimer=setTimeout(saveData,600);}
-function setSave(t){const el=document.getElementById('save-txt');if(el)el.textContent=t;}
+// ─── Carte canvas (tuiles OSM) ───────────────────────────────
+const TILE_SIZE=256;
+let mapView={lat:25.2048,lon:55.2708,zoom:12};
+let pickedCoords=null;
+let mapCanvas=null, mapCtx=null;
+let tileCache={};
+let isDragging=false, dragStart=null, dragViewStart=null;
+let pinchDist=null;
 
-// ─── Carte ───────────────────────────────────────────────────
+function lon2tile(lon,z){return Math.floor((lon+180)/360*Math.pow(2,z));}
+function lat2tile(lat,z){return Math.floor((1-Math.log(Math.tan(lat*Math.PI/180)+1/Math.cos(lat*Math.PI/180))/Math.PI)/2*Math.pow(2,z));}
+function tile2lon(x,z){return x/Math.pow(2,z)*360-180;}
+function tile2lat(y,z){const n=Math.PI-2*Math.PI*y/Math.pow(2,z);return 180/Math.PI*Math.atan(0.5*(Math.exp(n)-Math.exp(-n)));}
+
+function latlon2px(lat,lon){
+  const z=mapView.zoom, n=Math.pow(2,z);
+  const cx=mapCanvas.width/2, cy=mapCanvas.height/2;
+  const cx_tile=(mapView.lon+180)/360*n;
+  const cy_tile=(1-Math.log(Math.tan(mapView.lat*Math.PI/180)+1/Math.cos(mapView.lat*Math.PI/180))/Math.PI)/2*n;
+  const px_tile=(lon+180)/360*n;
+  const py_tile=(1-Math.log(Math.tan(lat*Math.PI/180)+1/Math.cos(lat*Math.PI/180))/Math.PI)/2*n;
+  return{x:cx+(px_tile-cx_tile)*TILE_SIZE, y:cy+(py_tile-cy_tile)*TILE_SIZE};
+}
+function px2latlon(px,py){
+  const z=mapView.zoom, n=Math.pow(2,z);
+  const cx=mapCanvas.width/2, cy=mapCanvas.height/2;
+  const cx_tile=(mapView.lon+180)/360*n;
+  const cy_tile=(1-Math.log(Math.tan(mapView.lat*Math.PI/180)+1/Math.cos(mapView.lat*Math.PI/180))/Math.PI)/2*n;
+  const tx=cx_tile+(px-cx)/TILE_SIZE;
+  const ty=cy_tile+(py-cy)/TILE_SIZE;
+  const lon=tx/n*360-180;
+  const lat=Math.atan(Math.sinh(Math.PI*(1-2*ty/n)))*180/Math.PI;
+  return{lat,lon};
+}
+
+function loadTile(x,y,z){
+  const key=`${z}/${x}/${y}`;
+  if(tileCache[key]) return tileCache[key];
+  const img=new Image();
+  img.crossOrigin='anonymous';
+  // Essai tuiles OSM
+  img.src=`https://tile.openstreetmap.org/${z}/${x}/${y}.png`;
+  img.onload=()=>{tileCache[key]=img; drawMap();};
+  img.onerror=()=>{
+    // Fallback tuile Carto (autre serveur)
+    const img2=new Image();
+    img2.crossOrigin='anonymous';
+    img2.src=`https://a.basemaps.cartocdn.com/rastertiles/voyager/${z}/${x}/${y}.png`;
+    img2.onload=()=>{tileCache[key]=img2; drawMap();};
+    tileCache[key]=img2;
+  };
+  tileCache[key]=img;
+  return img;
+}
+
+function drawMap(){
+  if(!mapCanvas||!mapCtx) return;
+  const w=mapCanvas.width, h=mapCanvas.height;
+  mapCtx.clearRect(0,0,w,h);
+  // Fond gris en attendant les tuiles
+  mapCtx.fillStyle='#E8E8ED';
+  mapCtx.fillRect(0,0,w,h);
+
+  const z=Math.round(mapView.zoom), n=Math.pow(2,z);
+  const cx=w/2, cy=h/2;
+  const cx_tile=(mapView.lon+180)/360*n;
+  const cy_tile=(1-Math.log(Math.tan(mapView.lat*Math.PI/180)+1/Math.cos(mapView.lat*Math.PI/180))/Math.PI)/2*n;
+
+  const x0=Math.floor(cx_tile-cx/TILE_SIZE);
+  const y0=Math.floor(cy_tile-cy/TILE_SIZE);
+  const x1=Math.floor(cx_tile+cx/TILE_SIZE);
+  const y1=Math.floor(cy_tile+cy/TILE_SIZE);
+
+  for(let tx=x0;tx<=x1;tx++){
+    for(let ty=y0;ty<=y1;ty++){
+      const px=cx+(tx-cx_tile)*TILE_SIZE;
+      const py=cy+(ty-cy_tile)*TILE_SIZE;
+      const img=loadTile((tx%n+n)%n, Math.max(0,Math.min(ty,n-1)), z);
+      if(img.complete&&img.naturalWidth>0) mapCtx.drawImage(img,px,py,TILE_SIZE,TILE_SIZE);
+      else{mapCtx.fillStyle='#F2F2F7';mapCtx.fillRect(px,py,TILE_SIZE,TILE_SIZE);}
+    }
+  }
+
+  // Pin épinglé
+  if(pickedCoords){
+    const p=latlon2px(pickedCoords.lat,pickedCoords.lon);
+    mapCtx.beginPath();
+    mapCtx.arc(p.x,p.y-2,10,0,Math.PI*2);
+    mapCtx.fillStyle='#007AFF';
+    mapCtx.fill();
+    mapCtx.strokeStyle='#fff';
+    mapCtx.lineWidth=2.5;
+    mapCtx.stroke();
+    // Tige
+    mapCtx.beginPath();
+    mapCtx.moveTo(p.x,p.y+8);
+    mapCtx.lineTo(p.x,p.y+18);
+    mapCtx.strokeStyle='#007AFF';
+    mapCtx.lineWidth=3;
+    mapCtx.stroke();
+  }
+
+  // Position GPS
+  if(userPos){
+    const p=latlon2px(userPos.lat,userPos.lon);
+    mapCtx.beginPath();
+    mapCtx.arc(p.x,p.y,8,0,Math.PI*2);
+    mapCtx.fillStyle='rgba(0,122,255,0.2)';
+    mapCtx.fill();
+    mapCtx.beginPath();
+    mapCtx.arc(p.x,p.y,5,0,Math.PI*2);
+    mapCtx.fillStyle='#007AFF';
+    mapCtx.fill();
+    mapCtx.strokeStyle='#fff';
+    mapCtx.lineWidth=2;
+    mapCtx.stroke();
+  }
+
+  // Attribution
+  mapCtx.fillStyle='rgba(255,255,255,0.7)';
+  mapCtx.fillRect(0,h-18,180,18);
+  mapCtx.fillStyle='#555';
+  mapCtx.font='10px sans-serif';
+  mapCtx.fillText('© OpenStreetMap contributors',4,h-5);
+}
+
+function initMap(){
+  mapCanvas=document.getElementById('map-canvas');
+  mapCtx=mapCanvas.getContext('2d');
+  const sheet=mapCanvas.parentElement;
+  mapCanvas.width=sheet.clientWidth;
+  mapCanvas.height=Math.min(window.innerHeight*0.5,380);
+
+  // Clic
+  mapCanvas.addEventListener('click',e=>{
+    if(isDragging) return;
+    const r=mapCanvas.getBoundingClientRect();
+    const p=px2latlon(e.clientX-r.left, e.clientY-r.top);
+    pickedCoords={lat:p.lat,lon:p.lon};
+    const el=document.getElementById('map-picked');
+    el.textContent=`📍 ${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}`;
+    el.classList.add('ready');
+    document.getElementById('btn-confirm-map').disabled=false;
+    drawMap();
+  });
+
+  // Drag
+  mapCanvas.addEventListener('mousedown',e=>{isDragging=false;dragStart={x:e.clientX,y:e.clientY};dragViewStart={...mapView};});
+  mapCanvas.addEventListener('mousemove',e=>{
+    if(!dragStart) return;
+    const dx=e.clientX-dragStart.x, dy=e.clientY-dragStart.y;
+    if(Math.abs(dx)>3||Math.abs(dy)>3) isDragging=true;
+    if(isDragging){
+      const c=px2latlon(mapCanvas.width/2-dx, mapCanvas.height/2-dy);
+      mapView.lat=c.lat; mapView.lon=c.lon;
+      drawMap();
+    }
+  });
+  mapCanvas.addEventListener('mouseup',()=>{dragStart=null; setTimeout(()=>isDragging=false,10);});
+
+  // Touch drag + pinch
+  mapCanvas.addEventListener('touchstart',e=>{
+    if(e.touches.length===1){
+      isDragging=false;
+      dragStart={x:e.touches[0].clientX,y:e.touches[0].clientY};
+      dragViewStart={...mapView};
+    } else if(e.touches.length===2){
+      pinchDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    }
+    e.preventDefault();
+  },{passive:false});
+  mapCanvas.addEventListener('touchmove',e=>{
+    if(e.touches.length===1&&dragStart){
+      const dx=e.touches[0].clientX-dragStart.x, dy=e.touches[0].clientY-dragStart.y;
+      if(Math.abs(dx)>3||Math.abs(dy)>3) isDragging=true;
+      if(isDragging){
+        const c=px2latlon(mapCanvas.width/2-dx, mapCanvas.height/2-dy);
+        mapView.lat=c.lat; mapView.lon=c.lon;
+        drawMap();
+      }
+    } else if(e.touches.length===2&&pinchDist){
+      const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+      const delta=d-pinchDist;
+      if(Math.abs(delta)>5){mapView.zoom=Math.max(2,Math.min(19,mapView.zoom+(delta>0?1:-1)));pinchDist=d;tileCache={};drawMap();}
+    }
+    e.preventDefault();
+  },{passive:false});
+  mapCanvas.addEventListener('touchend',e=>{
+    if(e.changedTouches.length===1&&!isDragging&&dragStart){
+      const r=mapCanvas.getBoundingClientRect();
+      const tx=e.changedTouches[0].clientX-r.left, ty=e.changedTouches[0].clientY-r.top;
+      const p=px2latlon(tx,ty);
+      pickedCoords={lat:p.lat,lon:p.lon};
+      const el=document.getElementById('map-picked');
+      el.textContent=`📍 ${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}`;
+      el.classList.add('ready');
+      document.getElementById('btn-confirm-map').disabled=false;
+      drawMap();
+    }
+    dragStart=null; pinchDist=null; setTimeout(()=>isDragging=false,10);
+  });
+
+  // Scroll zoom
+  mapCanvas.addEventListener('wheel',e=>{
+    e.preventDefault();
+    mapView.zoom=Math.max(2,Math.min(19,mapView.zoom+(e.deltaY<0?1:-1)));
+    tileCache={};
+    drawMap();
+  },{passive:false});
+
+  drawMap();
+}
+
+function mapZoom(delta){mapView.zoom=Math.max(2,Math.min(19,mapView.zoom+delta));tileCache={};drawMap();}
+function mapCenterGPS(){if(userPos){mapView.lat=userPos.lat;mapView.lon=userPos.lon;mapView.zoom=16;tileCache={};drawMap();}else alert('GPS non actif.');}
+
 function openMap(){
   document.getElementById('map-modal').classList.remove('hidden');
-  pickedCoords=null; pickedName=null;
-  document.getElementById('map-picked').textContent='Appuie sur la carte pour choisir un lieu';
+  pickedCoords=null;
+  document.getElementById('map-picked').textContent='Appuie sur la carte pour épingler un lieu';
   document.getElementById('map-picked').classList.remove('ready');
   document.getElementById('btn-confirm-map').disabled=true;
-
-  if(!leafletMap){
-    leafletMap=L.map('map-container',{zoomControl:true}).setView([25.2048,55.2708],12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-      attribution:'© OpenStreetMap contributors',maxZoom:19
-    }).addTo(leafletMap);
-    leafletMap.on('click',onMapClick);
-  }
-  // Centre sur position GPS si disponible
-  if(userPos) leafletMap.setView([userPos.lat,userPos.lon],16);
-  setTimeout(()=>leafletMap.invalidateSize(),150);
+  if(userPos){mapView.lat=userPos.lat;mapView.lon=userPos.lon;mapView.zoom=15;}
+  setTimeout(()=>{initMap();},50);
 }
-
-function onMapClick(e){
-  const {lat,lng}=e.latlng;
-  pickedCoords={lat,lon:lng};
-  pickedName=`${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-  if(pickedMarker) pickedMarker.remove();
-  pickedMarker=L.marker([lat,lng],{
-    icon:L.divIcon({className:'',html:'<div style="background:#007AFF;width:16px;height:16px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>',iconSize:[16,16],iconAnchor:[8,8]})
-  }).addTo(leafletMap);
-  document.getElementById('map-picked').textContent=`📍 ${pickedName}`;
-  document.getElementById('map-picked').classList.add('ready');
-  document.getElementById('btn-confirm-map').disabled=false;
-}
-
 function closeMap(){document.getElementById('map-modal').classList.add('hidden');}
-
 function confirmMap(){
   if(!pickedCoords) return;
   newTaskCoords=pickedCoords;
-  newTaskLocName=pickedName;
-  closeMap();
-  render(); // met à jour le bouton dans le formulaire
+  newTaskLocName=`${pickedCoords.lat.toFixed(5)}, ${pickedCoords.lon.toFixed(5)}`;
+  closeMap(); render();
 }
 
 // ─── GPS ─────────────────────────────────────────────────────
@@ -247,11 +413,10 @@ async function startGPS(){
       userPos={lat:pos.coords.latitude,lon:pos.coords.longitude};
       currentPlaceName=`${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
       setGPSUI('active',`GPS actif · précision ${Math.round(pos.coords.accuracy)}m`);
-      if(leafletMap) leafletMap.setView([userPos.lat,userPos.lon],15);
       checkProximity();
     },
     err=>{
-      const m={1:'Accès refusé — autorise la localisation.',2:'Position indisponible.',3:'Délai dépassé.'};
+      const m={1:'Accès refusé.',2:'Position indisponible.',3:'Délai dépassé.'};
       setGPSUI('error',m[err.code]||'Erreur GPS');
       gpsActive=false; render();
     },
@@ -273,15 +438,11 @@ function checkProximity(){
   let changed=false;
   tasks.filter(t=>t.coords&&!t.done).forEach(t=>{
     const d=Math.round(haversine(userPos.lat,userPos.lon,t.coords.lat,t.coords.lon));
-    t.dist=d;
-    const was=t.nearby;
-    t.nearby=d<=RADIUS;
+    t.dist=d; const was=t.nearby; t.nearby=d<=RADIUS;
     if(t.nearby&&!was&&!notifiedIds.has(t.id)){
       notifiedIds.add(t.id);
       if('Notification' in window&&Notification.permission==='granted'){
-        new Notification('📍 Tâche à proximité !',{
-          body:`"${t.text}"${t.locName?' — '+t.locName:''} à ${fmtDist(d)} de toi.`
-        });
+        new Notification('📍 Tâche à proximité !',{body:`"${t.text}" à ${fmtDist(d)} de toi.`});
       }
     }
     if(!t.nearby) notifiedIds.delete(t.id);
@@ -293,22 +454,41 @@ function checkProximity(){
 
 async function simulateNearby(){
   const t=tasks.find(x=>x.coords&&!x.done);
-  if(!t){alert('Ajoute d\'abord une tâche avec un lieu sur la carte.');return;}
+  if(!t){alert('Ajoute d\'abord une tâche avec un lieu épinglé sur la carte.');return;}
   userPos={lat:t.coords.lat+0.001,lon:t.coords.lon};
-  gpsActive=true;
-  window._gpsState={state:'active',msg:'🧪 Mode test actif'};
-  currentPlaceName='Position simulée';
-  notifiedIds=new Set();
+  gpsActive=true; window._gpsState={state:'active',msg:'🧪 Mode test'};
+  currentPlaceName='Position simulée'; notifiedIds=new Set();
   checkProximity();
   if('Notification' in window){
-    if(Notification.permission==='granted') new Notification('🧪 Test notifications',{body:'Ça fonctionne ✅'});
-    else{
-      const p=await Notification.requestPermission();
-      if(p==='granted') new Notification('🧪 Test notifications',{body:'Ça fonctionne ✅'});
-      else alert('Notifications bloquées — autorise-les dans les paramètres Chrome.');
-    }
+    if(Notification.permission==='granted') new Notification('🧪 Test',{body:'Notifications OK ✅'});
+    else{const p=await Notification.requestPermission();if(p==='granted') new Notification('🧪 Test',{body:'Notifications OK ✅'});}
   }
 }
+
+// ─── Storage ─────────────────────────────────────────────────
+function loadData(){
+  try{
+    const raw=localStorage.getItem('todo_gps_v3');
+    if(raw){const d=JSON.parse(raw);tasks=d.tasks||[];nextId=d.nextId||tasks.length+1;}
+    else{
+      tasks=[
+        {id:1,text:"Faire la demande de Move-in permit",cat:"perso",moment:"matin",locName:"",coords:null,nearby:false,dist:null,inFocus:true,done:false},
+        {id:2,text:"Acheter médicaments",cat:"sante",moment:"apresmidi",locName:"",coords:null,nearby:false,dist:null,inFocus:true,done:false},
+        {id:3,text:"Faire les courses",cat:"courses",moment:"soir",locName:"",coords:null,nearby:false,dist:null,inFocus:false,done:false},
+        {id:4,text:"Appeler assurance",cat:"perso",moment:"matin",locName:"",coords:null,nearby:false,dist:null,inFocus:false,done:false},
+      ];
+      nextId=5;
+    }
+  }catch(e){tasks=[];nextId=1;}
+  setSave('Sauvegardé'); render();
+}
+function saveData(){
+  setSave('Sauvegarde...');
+  try{localStorage.setItem('todo_gps_v3',JSON.stringify({tasks,nextId}));setSave('✓ Sauvegardé');}
+  catch(e){setSave('Erreur');}
+}
+function scheduleSave(){if(saveTimer)clearTimeout(saveTimer);setSave('...');saveTimer=setTimeout(saveData,600);}
+function setSave(t){const el=document.getElementById('save-txt');if(el)el.textContent=t;}
 
 // ─── Task ops ────────────────────────────────────────────────
 function catLabel(c){return{perso:'Perso',travail:'Travail',courses:'Courses',sante:'Santé',autre:'Autre'}[c]||c;}
@@ -318,8 +498,7 @@ function showTab(t){
   currentTab=t;
   document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['focus','backlog','moments'][i]===t));
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('visible'));
-  document.getElementById('tab-'+t).classList.add('visible');
-  render();
+  document.getElementById('tab-'+t).classList.add('visible'); render();
 }
 function toggleDone(id){
   const t=tasks.find(x=>x.id===id);
@@ -336,7 +515,7 @@ function addTask(){
     cat:document.getElementById('new-cat-sel').value,
     moment:document.getElementById('new-moment-sel').value,
     locName:newTaskLocName||'', coords:newTaskCoords||null,
-    nearby:false, dist:null, inFocus:false, done:false});
+    nearby:false,dist:null,inFocus:false,done:false});
   inp.value=''; newTaskCoords=null; newTaskLocName=null;
   scheduleSave(); render();
   if(userPos) checkProximity();
@@ -352,26 +531,23 @@ function gpsBarHTML(){
     <div class="gps-dot${dot}"></div>
     <div style="flex:1"><div class="gps-label">${s.msg}</div><div class="gps-sub">${sub}</div></div>
     ${nb>0?`<span class="nbadge">📍 ${nb}</span>`:''}
-    <button class="btn-gps" onclick="simulateNearby()" style="background:#FEF3E2;border-color:#FAD67A;color:#7A4D0A;margin-right:4px" title="Simuler proximité">🧪</button>
+    <button class="btn-gps" onclick="simulateNearby()" style="background:#FEF3E2;border-color:#FAD67A;color:#7A4D0A;margin-right:4px" title="Tester">🧪</button>
     <button class="btn-gps${gpsActive?' active':''}" onclick="toggleGPS()">${gpsActive?'Arrêter':'GPS'}</button>
   </div>`;
 }
 function nearbyHTML(){
   const nb=tasks.filter(t=>t.nearby&&!t.done);
   if(!nb.length||!gpsActive) return'';
-  return`<div class="nearby-alert">
-    <span style="font-size:18px;flex-shrink:0">📍</span>
+  return`<div class="nearby-alert"><span style="font-size:18px;flex-shrink:0">📍</span>
     <div><strong>${nb.length} tâche${nb.length>1?'s':''} à moins de ${RADIUS}m :</strong><br>
-    ${nb.map(t=>`${t.text}${t.locName?` — <em>${t.locName}</em>`:''} <span class="dpill">${fmtDist(t.dist)}</span>`).join('<br>')}</div>
-  </div>`;
+    ${nb.map(t=>`${t.text} <span class="dpill">${fmtDist(t.dist)}</span>`).join('<br>')}</div></div>`;
 }
 function taskSub(t){
-  if(!t.locName&&!t.coords) return'';
-  let s=`<div class="bl-sub">📍 ${t.locName||'Lieu épinglé'}`;
+  if(!t.coords) return'';
+  let s=`<div class="bl-sub">📍 Lieu épinglé`;
   if(t.dist!==null&&gpsActive) s+=` · <span style="color:${t.nearby?'#1A5C2E':'#86868B'};font-weight:${t.nearby?600:400}">${fmtDist(t.dist)}</span>`;
   return s+'</div>';
 }
-
 function renderFocus(){
   const ft=focusTasks(), done=ft.filter(t=>t.done).length;
   let h=gpsBarHTML()+nearbyHTML();
@@ -398,7 +574,7 @@ function renderFocus(){
     [...pending].sort((a,b)=>b.nearby-a.nearby).slice(0,3).forEach(t=>{
       h+=`<div class="bl-item${t.nearby?' nearby':''}">
         <span class="bl-text">${t.text}</span>
-        ${t.locName?`<span class="lpill">📍 ${t.locName}${t.dist!==null&&gpsActive?' · '+fmtDist(t.dist):''}</span>`:''}
+        ${t.coords?`<span class="lpill">📍${t.dist!==null&&gpsActive?' '+fmtDist(t.dist):' Épinglé'}</span>`:''}
         ${t.nearby?`<span class="dpill">Proche</span>`:''}
         <button class="btn-focus" onclick="addToFocus(${t.id})" ${!canFocus()?'disabled':''}>+ Focus</button>
       </div>`;
@@ -408,14 +584,13 @@ function renderFocus(){
   }
   document.getElementById('tab-focus').innerHTML=h;
 }
-
 function renderBacklog(){
   const full=tasks.length>=MAX, warn=tasks.length>=MAX-2&&!full;
   const pc=full?'cnt-pill cnt-full':warn?'cnt-pill cnt-warn':'cnt-pill';
   let h=`<div class="count-row"><span class="sec-label">Toutes les tâches</span><span class="${pc}">${tasks.length}/${MAX}</span></div>`;
   if(full) h+=`<div class="limit-msg">⚠️ Limite atteinte — supprime une tâche pour en ajouter.</div>`;
   else{
-    const locLabel=newTaskLocName?`📍 ${newTaskLocName}`:'📍 Choisir un lieu sur la carte (optionnel)';
+    const locLabel=newTaskLocName?`📍 Lieu épinglé ✓`:'📍 Épingler un lieu sur la carte (optionnel)';
     h+=`<div class="add-box">
       <div class="add-row"><input type="text" id="new-task-inp" placeholder="Nouvelle tâche..." onkeydown="if(event.key==='Enter')addTask()"/></div>
       <div class="add-row"><button class="btn-map${newTaskLocName?' selected':''}" onclick="openMap()">${locLabel}</button></div>
@@ -442,13 +617,11 @@ function renderBacklog(){
   h+='</div>';
   document.getElementById('tab-backlog').innerHTML=h;
 }
-
 function renderMoments(){
   let h='';
   MOMENTS.forEach(m=>{
     const items=tasks.filter(t=>t.moment===m), done=items.filter(t=>t.done).length;
-    h+=`<div class="moment-block">
-      <div class="moment-head"><div class="mico" style="background:${MI[m].bg}">${MI[m].icon}</div><span class="mname">${ML[m]}</span><span class="mcnt">${done}/${items.length}</span></div><div>`;
+    h+=`<div class="moment-block"><div class="moment-head"><div class="mico" style="background:${MI[m].bg}">${MI[m].icon}</div><span class="mname">${ML[m]}</span><span class="mcnt">${done}/${items.length}</span></div><div>`;
     if(!items.length) h+=`<div class="empty-m">Aucune tâche</div>`;
     items.forEach(t=>{
       h+=`<div class="moment-item${t.nearby&&!t.done?' nearby':''}">
@@ -463,7 +636,6 @@ function renderMoments(){
   });
   document.getElementById('tab-moments').innerHTML=h;
 }
-
 function render(){renderFocus();renderBacklog();renderMoments();}
 loadData();
 </script>

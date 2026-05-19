@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Todo GPS</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F5F5F7;color:#1D1D1F;min-height:100vh}
+#app{max-width:680px;margin:0 auto;padding:1.5rem 1rem}
+.top-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
+.app-title{font-size:20px;font-weight:600;color:#1D1D1F}
+.save-badge{font-size:11px;color:#86868B}
+.tabs{display:flex;gap:4px;margin-bottom:1.25rem;background:#E8E8ED;border-radius:10px;padding:4px}
+.tab{flex:1;padding:8px;border:none;background:none;border-radius:7px;font-size:13px;cursor:pointer;color:#86868B;font-family:inherit;transition:all .15s}
+.tab.active{background:#fff;color:#1D1D1F;box-shadow:0 1px 3px rgba(0,0,0,.1);font-weight:500}
+.section{display:none}.section.visible{display:block}
+
+/* GPS bar */
+.gps-bar{border-radius:12px;border:1px solid #E5E5EA;padding:12px 14px;margin-bottom:1rem;display:flex;align-items:center;gap:10px;background:#F9F9FB}
+.gps-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;background:#C7C7CC;transition:background .3s}
+.gps-dot.active{background:#30D158;box-shadow:0 0 0 3px rgba(48,209,88,.2)}
+.gps-dot.error{background:#FF453A}
+.gps-dot.loading{background:#FF9F0A;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.gps-label{font-size:13px;color:#1D1D1F;flex:1}
+.gps-sub{font-size:11px;color:#86868B;margin-top:2px}
+.btn-gps{border:1px solid #C7C7CC;border-radius:8px;padding:7px 13px;font-size:13px;background:#fff;cursor:pointer;white-space:nowrap;font-family:inherit;transition:all .15s}
+.btn-gps:hover{background:#F2F2F7}
+.btn-gps.active{background:#E8F9EE;border-color:#30D158;color:#1A7A35}
+.nbadge{font-size:11px;padding:3px 9px;border-radius:999px;background:#30D158;color:#fff;font-weight:600}
+
+/* Alert */
+.nearby-alert{border-radius:10px;padding:10px 14px;margin-bottom:1rem;font-size:13px;display:flex;align-items:flex-start;gap:8px;border:1px solid #30D158;background:#E8F9EE;color:#1A5C2E}
+.nearby-alert.hidden{display:none}
+
+/* Focus */
+.focus-header{display:flex;align-items:baseline;justify-content:space-between;margin:1rem 0 10px}
+.focus-title{font-size:14px;font-weight:500}
+.focus-sub{font-size:12px;color:#86868B}
+.focus-slots{display:flex;flex-direction:column;gap:8px;margin-bottom:1.5rem}
+.focus-slot{border:1.5px dashed #C7C7CC;border-radius:12px;padding:14px 16px;cursor:pointer;min-height:58px;display:flex;align-items:center;gap:10px;transition:all .15s;background:#fff}
+.focus-slot:hover{border-color:#007AFF}
+.focus-slot.filled{border-style:solid;border-color:#E5E5EA;cursor:default}
+.focus-slot.nearby{border-color:#30D158;background:#E8F9EE}
+.focus-slot.done-s{opacity:.5}
+.snum{font-size:22px;font-weight:500;color:#C7C7CC;width:24px;flex-shrink:0;text-align:center}
+.stext{font-size:15px;flex:1;min-width:0}
+.stext.done{text-decoration:line-through;color:#86868B}
+.shint{font-size:13px;color:#86868B}
+.mcheck{width:22px;height:22px;border-radius:50%;border:1.5px solid #C7C7CC;cursor:pointer;flex-shrink:0;background:#fff;transition:all .15s;display:flex;align-items:center;justify-content:center}
+.mcheck:hover{border-color:#30D158}
+.mcheck.done{background:#30D158;border-color:#30D158}
+.mcheck.done::after{content:'';display:block;width:10px;height:6px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.divider{height:1px;background:#E5E5EA;margin:1.25rem 0}
+.sec-label{font-size:11px;font-weight:600;color:#86868B;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+
+/* Add box */
+.add-box{background:#F9F9FB;border-radius:12px;border:1px solid #E5E5EA;padding:12px 14px;margin-bottom:12px}
+.add-row{display:flex;gap:6px;margin-bottom:6px}
+.add-row input,.add-row3 input{flex:1;border:1px solid #E5E5EA;border-radius:8px;padding:9px 12px;font-size:14px;color:#1D1D1F;background:#fff;font-family:inherit;outline:none;transition:border-color .15s}
+.add-row input:focus,.add-row3 input:focus{border-color:#007AFF}
+.add-row3{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.add-row3 select{border:1px solid #E5E5EA;border-radius:8px;padding:8px 10px;font-size:13px;background:#fff;font-family:inherit;outline:none;cursor:pointer}
+.btn-ai{display:flex;align-items:center;gap:5px;border:1px solid #9B8FD4;border-radius:8px;padding:8px 12px;font-size:13px;color:#4A3F8C;background:#EDEDF8;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s}
+.btn-ai:hover{background:#DDDDF0}
+.btn-ai:disabled{opacity:.5;cursor:default}
+.btn-add{border:1px solid #007AFF;border-radius:8px;padding:8px 16px;font-size:14px;color:#007AFF;background:#E8F0FF;cursor:pointer;font-weight:500;font-family:inherit;margin-left:auto;transition:all .15s}
+.btn-add:hover{background:#CCE0FF}
+.ai-sug{background:#EDEDF8;border:1px solid #9B8FD4;border-radius:8px;padding:9px 12px;font-size:13px;color:#4A3F8C;margin-top:8px;display:flex;align-items:center;gap:8px}
+.ai-sug.hidden{display:none}
+
+/* Pills */
+.cpill{font-size:11px;padding:3px 9px;border-radius:999px;flex-shrink:0;font-weight:500}
+.cat-perso{background:#EDEDF8;color:#4A3F8C}
+.cat-travail{background:#FEF3E2;color:#7A4D0A}
+.cat-courses{background:#E8F5D8;color:#2C5F0A}
+.cat-sante{background:#FDEAEA;color:#8B1F1F}
+.cat-autre{background:#F2F2F7;color:#86868B}
+.mpill{font-size:11px;padding:3px 8px;border-radius:999px;background:#F2F2F7;color:#86868B;flex-shrink:0}
+.fpill{font-size:11px;padding:3px 8px;border-radius:999px;background:#E8F9EE;color:#1A5C2E;border:1px solid #30D158;flex-shrink:0}
+.npill{font-size:11px;padding:3px 9px;border-radius:999px;background:#30D158;color:#fff;font-weight:600;flex-shrink:0}
+.dpill{font-size:11px;padding:3px 8px;border-radius:999px;background:#E8F9EE;color:#1A5C2E;font-weight:500;flex-shrink:0}
+.lpill{font-size:11px;padding:3px 8px;border-radius:999px;background:#F2F2F7;color:#86868B;flex-shrink:0}
+
+/* Task list */
+.bl-list{display:flex;flex-direction:column;gap:6px}
+.bl-item{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #E5E5EA;border-radius:10px;padding:10px 12px;transition:all .2s}
+.bl-item.nearby{border-color:#30D158;background:#E8F9EE}
+.bl-text{font-size:14px;flex:1;min-width:0}
+.bl-text.done{text-decoration:line-through;color:#86868B}
+.bl-sub{font-size:11px;color:#86868B;margin-top:2px;display:flex;align-items:center;gap:3px}
+.btn-focus{font-size:11px;padding:4px 10px;border-radius:999px;background:#E8F0FF;border:1px solid #007AFF;color:#007AFF;cursor:pointer;white-space:nowrap;font-family:inherit;transition:all .15s}
+.btn-focus:hover{background:#CCE0FF}
+.btn-focus:disabled{opacity:.4;cursor:default;background:#F2F2F7;border-color:#C7C7CC;color:#86868B}
+.btn-del{background:none;border:none;cursor:pointer;color:#86868B;font-size:18px;padding:2px 4px;opacity:.5;line-height:1;transition:opacity .15s}
+.btn-del:hover{opacity:1}
+.count-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cnt-pill{font-size:11px;padding:3px 9px;border-radius:999px;background:#F2F2F7;color:#86868B;border:1px solid #E5E5EA}
+.cnt-warn{background:#FEF3E2;color:#7A4D0A;border-color:#FAD67A}
+.cnt-full{background:#FDEAEA;color:#8B1F1F;border-color:#F5C0C0}
+.limit-msg{font-size:13px;color:#8B1F1F;background:#FDEAEA;border:1px solid #F5C0C0;border-radius:8px;padding:9px 13px;margin-bottom:10px}
+
+/* Moments */
+.moment-block{background:#fff;border:1px solid #E5E5EA;border-radius:12px;overflow:hidden;margin-bottom:10px}
+.moment-head{padding:11px 14px;border-bottom:1px solid #E5E5EA;display:flex;align-items:center;gap:8px}
+.mico{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px}
+.mname{font-size:14px;font-weight:500}
+.mcnt{font-size:12px;color:#86868B;margin-left:auto}
+.moment-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #F2F2F7;transition:background .2s}
+.moment-item:last-child{border-bottom:none}
+.moment-item.nearby{background:#E8F9EE}
+.mi-text{font-size:14px;flex:1;min-width:0}
+.mi-text.done{text-decoration:line-through;color:#86868B}
+.empty-m{padding:14px;font-size:13px;color:#86868B}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="top-row">
+    <span class="app-title">Mes tâches</span>
+    <span class="save-badge" id="save-txt">Chargement...</span>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('focus')">Focus</button>
+    <button class="tab" onclick="showTab('backlog')">Toutes</button>
+    <button class="tab" onclick="showTab('moments')">Par moment</button>
+  </div>
+  <div id="tab-focus" class="section visible"></div>
+  <div id="tab-backlog" class="section"></div>
+  <div id="tab-moments" class="section"></div>
+</div>
+
+<script>
+const MAX=10, RADIUS=500;
+const MOMENTS=['matin','apresmidi','soir'];
+const ML={matin:'Matin',apresmidi:'Après-midi',soir:'Soir'};
+const MI={matin:{bg:'#FEF3E2',icon:'🌅'},apresmidi:{bg:'#E8F0FF',icon:'☀️'},soir:{bg:'#EDEDF8',icon:'🌙'}};
+
+let tasks=[], nextId=1, currentTab='focus', saveTimer=null;
+let gpsActive=false, gpsWatcher=null, userPos=null;
+let geocodeCache={}, notifiedIds=new Set();
+let currentPlaceName=null, reverseTimer=null;
+
+// ─── Storage (localStorage) ──────────────────────────────────
+function loadData(){
+  try{
+    const raw=localStorage.getItem('todo_gps_v1');
+    if(raw){const d=JSON.parse(raw);tasks=d.tasks||[];nextId=d.nextId||tasks.length+1;}
+    else{
+      tasks=[
+        {id:1,text:"Acheter médicaments",cat:"sante",moment:"apresmidi",loc:"Pharmacie Jumeirah",coords:null,nearby:false,dist:null,inFocus:true,done:false},
+        {id:2,text:"Faire les courses",cat:"courses",moment:"soir",loc:"Carrefour Mall of Emirates",coords:null,nearby:false,dist:null,inFocus:true,done:false},
+        {id:3,text:"Répondre aux emails",cat:"travail",moment:"matin",loc:"",coords:null,nearby:false,dist:null,inFocus:true,done:false},
+        {id:4,text:"Appeler assurance",cat:"perso",moment:"matin",loc:"",coords:null,nearby:false,dist:null,inFocus:false,done:false},
+      ];
+      nextId=5;
+    }
+  }catch(e){tasks=[];nextId=1;}
+  setSave('Sauvegardé');
+  render();
+}
+function saveData(){
+  setSave('Sauvegarde...');
+  try{localStorage.setItem('todo_gps_v1',JSON.stringify({tasks,nextId}));setSave('✓ Sauvegardé');}
+  catch(e){setSave('Erreur sauvegarde');}
+}
+function scheduleSave(){if(saveTimer)clearTimeout(saveTimer);setSave('...');saveTimer=setTimeout(saveData,600);}
+function setSave(t){const el=document.getElementById('save-txt');if(el)el.textContent=t;}
+
+// ─── Geo ────────────────────────────────────────────────────
+function haversine(lat1,lon1,lat2,lon2){
+  const R=6371000,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+async function geocode(loc){
+  if(!loc)return null;
+  const key=loc.toLowerCase().trim();
+  if(geocodeCache[key])return geocodeCache[key];
+  try{
+    const url=`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(loc+', Dubai, UAE')}&format=json&limit=1`;
+    const res=await fetch(url,{headers:{'User-Agent':'TodoGPS/1.0 personal-app'}});
+    const data=await res.json();
+    if(data&&data[0]){
+      const coords={lat:parseFloat(data[0].lat),lon:parseFloat(data[0].lon)};
+      geocodeCache[key]=coords;
+      return coords;
+    }
+  }catch(e){}
+  return null;
+}
+async function reverseGeocode(lat,lon){
+  try{
+    const url=`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=16`;
+    const res=await fetch(url,{headers:{'User-Agent':'TodoGPS/1.0 personal-app'}});
+    const data=await res.json();
+    if(data&&data.address){
+      const a=data.address;
+      // Prend le nom le plus précis disponible
+      const name=a.shop||a.amenity||a.building||a.road||a.neighbourhood||a.suburb||a.district||a.city_district||'';
+      const zone=a.suburb||a.neighbourhood||a.district||a.city_district||a.city||'';
+      if(name&&zone&&name!==zone)return`${name}, ${zone}`;
+      if(zone)return zone;
+      if(data.display_name)return data.display_name.split(',').slice(0,2).join(',').trim();
+    }
+  }catch(e){}
+  return null;
+}
+function fmtDist(d){if(d===null||d===undefined)return'';return d<1000?`${d}m`:`${(d/1000).toFixed(1)}km`;}
+
+// ─── GPS ────────────────────────────────────────────────────
+async function startGPS(){
+  if(!navigator.geolocation){alert('La géolocalisation n\'est pas supportée par ce navigateur.');return;}
+  setGPSUI('loading','Localisation en cours...');
+  if('Notification' in window && Notification.permission==='default'){
+    await Notification.requestPermission();
+  }
+  gpsWatcher=navigator.geolocation.watchPosition(
+    pos=>{
+      userPos={lat:pos.coords.latitude,lon:pos.coords.longitude};
+      setGPSUI('active',`GPS actif · précision ${Math.round(pos.coords.accuracy)}m`);
+      checkProximity();
+      // Reverse geocoding throttlé toutes les 15s
+      if(reverseTimer)clearTimeout(reverseTimer);
+      reverseTimer=setTimeout(async()=>{
+        const name=await reverseGeocode(userPos.lat,userPos.lon);
+        if(name){currentPlaceName=name;render();}
+      },500);
+    },
+    err=>{
+      const msgs={1:'Accès refusé — autorise la localisation dans ton navigateur.',2:'Position indisponible.',3:'Délai dépassé.'};
+      setGPSUI('error',msgs[err.code]||'Erreur GPS');
+      gpsActive=false;render();
+    },
+    {enableHighAccuracy:true,maximumAge:15000,timeout:15000}
+  );
+  gpsActive=true;
+  render();
+}
+function stopGPS(){
+  if(gpsWatcher!==null)navigator.geolocation.clearWatch(gpsWatcher);
+  if(reverseTimer)clearTimeout(reverseTimer);
+  gpsWatcher=null;gpsActive=false;userPos=null;currentPlaceName=null;
+  tasks.forEach(t=>{t.nearby=false;t.dist=null;});
+  setGPSUI('off','GPS désactivé');
+  render();
+}
+function toggleGPS(){gpsActive?stopGPS():startGPS();}
+function setGPSUI(state,msg){
+  // stored for re-render
+  window._gpsState={state,msg};
+  render();
+}
+
+async function checkProximity(){
+  if(!userPos)return;
+  const withLoc=tasks.filter(t=>t.loc&&!t.done);
+  let changed=false;
+  for(const task of withLoc){
+    if(!task.coords)task.coords=await geocode(task.loc);
+    if(task.coords){
+      const d=Math.round(haversine(userPos.lat,userPos.lon,task.coords.lat,task.coords.lon));
+      task.dist=d;
+      const was=task.nearby;
+      task.nearby=d<=RADIUS;
+      if(task.nearby&&!was&&!notifiedIds.has(task.id)){
+        notifiedIds.add(task.id);
+        if('Notification' in window && Notification.permission==='granted'){
+          new Notification('📍 Tâche à proximité !',{
+            body:`"${task.text}" — ${task.loc} est à ${fmtDist(d)} de toi.`,
+          });
+        }
+      }
+      if(!task.nearby)notifiedIds.delete(task.id);
+      changed=true;
+    }
+  }
+  tasks.filter(t=>!t.loc||t.done).forEach(t=>{t.nearby=false;t.dist=null;});
+  if(changed){scheduleSave();render();}
+}
+
+// ─── AI ─────────────────────────────────────────────────────
+async function askAI(){
+  const inp=document.getElementById('new-task-inp');
+  const txt=inp.value.trim();if(!txt)return;
+  const btn=document.getElementById('btn-ai');
+  btn.disabled=true;btn.textContent='⏳ Analyse...';
+  const sug=document.getElementById('ai-sug');sug.classList.add('hidden');
+  try{
+    const loc=document.getElementById('new-loc-inp').value.trim();
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:120,
+        messages:[{role:'user',content:`Tâche: "${txt}". ${loc?'Lieu: "'+loc+'".':''} Réponds UNIQUEMENT en JSON valide sans backticks: {"cat":"travail|perso|courses|sante|autre","moment":"matin|apresmidi|soir","raison":"1 phrase courte"}`}]})
+    });
+    const d=await res.json();
+    const parsed=JSON.parse(d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim());
+    document.getElementById('new-cat-sel').value=parsed.cat||'autre';
+    document.getElementById('new-moment-sel').value=parsed.moment||'matin';
+    sug.classList.remove('hidden');
+    sug.querySelector('.sug-r').textContent=parsed.raison||'';
+  }catch(e){
+    sug.classList.remove('hidden');
+    sug.querySelector('.sug-r').textContent='Analyse impossible, choisis manuellement.';
+  }
+  btn.disabled=false;btn.textContent='✨ IA';
+}
+
+// ─── Task ops ────────────────────────────────────────────────
+function catLabel(c){return{perso:'Perso',travail:'Travail',courses:'Courses',sante:'Santé',autre:'Autre'}[c]||c;}
+function focusTasks(){return tasks.filter(t=>t.inFocus);}
+function canFocus(){return focusTasks().length<3;}
+function showTab(t){
+  currentTab=t;
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['focus','backlog','moments'][i]===t));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('visible'));
+  document.getElementById('tab-'+t).classList.add('visible');
+  render();
+}
+function toggleDone(id){
+  const t=tasks.find(x=>x.id===id);
+  if(t){t.done=!t.done;if(t.done){t.nearby=false;t.dist=null;}scheduleSave();render();}
+}
+function removeFromFocus(id){const t=tasks.find(x=>x.id===id);if(t){t.inFocus=false;scheduleSave();render();}}
+function addToFocus(id){if(!canFocus())return;const t=tasks.find(x=>x.id===id);if(t){t.inFocus=true;scheduleSave();render();}}
+function delTask(id){tasks=tasks.filter(x=>x.id!==id);scheduleSave();render();}
+function addTask(){
+  if(tasks.length>=MAX)return;
+  const inp=document.getElementById('new-task-inp');
+  const txt=inp.value.trim();if(!txt)return;
+  tasks.push({id:nextId++,text:txt,
+    cat:document.getElementById('new-cat-sel').value,
+    moment:document.getElementById('new-moment-sel').value,
+    loc:document.getElementById('new-loc-inp').value.trim(),
+    coords:null,nearby:false,dist:null,inFocus:false,done:false});
+  inp.value='';document.getElementById('new-loc-inp').value='';
+  const sug=document.getElementById('ai-sug');if(sug)sug.classList.add('hidden');
+  scheduleSave();render();
+  if(userPos)setTimeout(checkProximity,300);
+}
+
+// ─── Render helpers ──────────────────────────────────────────
+function gpsBarHTML(){
+  const s=window._gpsState||{state:'off',msg:'GPS désactivé'};
+  const nb=tasks.filter(t=>t.nearby&&!t.done).length;
+  const dotCls=s.state==='active'?' active':s.state==='error'?' error':s.state==='loading'?' loading':'';
+  const sub=userPos
+    ? `📍 ${currentPlaceName||`${userPos.lat.toFixed(5)}, ${userPos.lon.toFixed(5)}`} · rayon ${RADIUS}m`
+    :'Active le GPS pour détecter les tâches proches automatiquement';
+  return`<div class="gps-bar">
+    <div class="gps-dot${dotCls}"></div>
+    <div style="flex:1"><div class="gps-label">${s.msg}</div><div class="gps-sub">${sub}</div></div>
+    ${nb>0?`<span class="nbadge">📍 ${nb}</span>`:''}
+    <button class="btn-gps${gpsActive?' active':''}" onclick="toggleGPS()">${gpsActive?'Arrêter':'Activer GPS'}</button>
+  </div>`;
+}
+function nearbyHTML(){
+  const nb=tasks.filter(t=>t.nearby&&!t.done);
+  if(!nb.length||!gpsActive)return'';
+  return`<div class="nearby-alert">
+    <span style="font-size:18px;flex-shrink:0">📍</span>
+    <div><strong>${nb.length} tâche${nb.length>1?'s':''} à moins de ${RADIUS}m :</strong><br>
+    ${nb.map(t=>`${t.text}${t.loc?` <span style="opacity:.7">— ${t.loc}</span>`:''} <span class="dpill">${fmtDist(t.dist)}</span>`).join('<br>')}</div>
+  </div>`;
+}
+function taskSub(t){
+  if(!t.loc)return'';
+  let s=`<div class="bl-sub">📍 ${t.loc}`;
+  if(t.dist!==null&&gpsActive)s+=` · <span style="color:${t.nearby?'#1A5C2E':'#86868B'};font-weight:${t.nearby?600:400}">${fmtDist(t.dist)}</span>`;
+  return s+'</div>';
+}
+
+// ─── Render tabs ─────────────────────────────────────────────
+function renderFocus(){
+  const ft=focusTasks(), done=ft.filter(t=>t.done).length;
+  let h=gpsBarHTML()+nearbyHTML();
+  h+=`<div class="focus-header"><span class="focus-title">Mes 3 priorités du jour</span><span class="focus-sub">${done}/${ft.length} faites</span></div>
+  <div class="focus-slots">`;
+  for(let i=0;i<3;i++){
+    const t=ft[i];
+    if(t){
+      h+=`<div class="focus-slot filled${t.nearby&&!t.done?' nearby':''}${t.done?' done-s':''}">
+        <div class="mcheck${t.done?' done':''}" onclick="toggleDone(${t.id})"></div>
+        <div style="flex:1;min-width:0">
+          <div class="stext${t.done?' done':''}">${t.text}</div>${taskSub(t)}
+        </div>
+        <span class="cpill cat-${t.cat}">${catLabel(t.cat)}</span>
+        <span class="mpill">${ML[t.moment]}</span>
+        ${t.nearby&&!t.done?`<span class="dpill">${fmtDist(t.dist)}</span>`:''}
+        <button class="btn-del" onclick="removeFromFocus(${t.id})">×</button>
+      </div>`;
+    }else{
+      h+=`<div class="focus-slot" onclick="showTab('backlog')"><span class="snum">${i+1}</span><span class="shint">Ajouter une priorité depuis la liste →</span></div>`;
+    }
+  }
+  h+='</div>';
+  const pending=tasks.filter(t=>!t.done&&!t.inFocus);
+  if(pending.length){
+    h+=`<div class="divider"></div><div class="sec-label">En attente (${pending.length})</div><div class="bl-list">`;
+    [...pending].sort((a,b)=>b.nearby-a.nearby).slice(0,3).forEach(t=>{
+      h+=`<div class="bl-item${t.nearby?' nearby':''}">
+        <span class="bl-text">${t.text}</span>
+        ${t.loc?`<span class="lpill">📍 ${t.loc}${t.dist!==null&&gpsActive?' · '+fmtDist(t.dist):''}</span>`:''}
+        ${t.nearby?`<span class="npill">Proche</span>`:''}
+        <button class="btn-focus" onclick="addToFocus(${t.id})" ${!canFocus()?'disabled':''}>+ Focus</button>
+      </div>`;
+    });
+    if(pending.length>3)h+=`<div style="font-size:12px;color:#86868B;padding:6px 2px">+${pending.length-3} autres dans "Toutes"</div>`;
+    h+='</div>';
+  }
+  document.getElementById('tab-focus').innerHTML=h;
+}
+
+function renderBacklog(){
+  const full=tasks.length>=MAX, warn=tasks.length>=MAX-2&&!full;
+  const pc=full?'cnt-pill cnt-full':warn?'cnt-pill cnt-warn':'cnt-pill';
+  let h=`<div class="count-row"><span class="sec-label">Toutes les tâches</span><span class="${pc}">${tasks.length}/${MAX}</span></div>`;
+  if(full)h+=`<div class="limit-msg">⚠️ Limite atteinte (${MAX}/${MAX}) — supprime une tâche pour en ajouter.</div>`;
+  else h+=`<div class="add-box">
+    <div class="add-row"><input type="text" id="new-task-inp" placeholder="Nouvelle tâche..." onkeydown="if(event.key==='Enter')addTask()"/></div>
+    <div class="add-row"><input type="text" id="new-loc-inp" placeholder="Lieu (ex: Carrefour JBR, Pharmacie Deira...)"/></div>
+    <div class="add-row3">
+      <select id="new-cat-sel"><option value="autre">Autre</option><option value="courses">Courses</option><option value="travail">Travail</option><option value="sante">Santé</option><option value="perso">Perso</option></select>
+      <select id="new-moment-sel"><option value="matin">Matin</option><option value="apresmidi">Après-midi</option><option value="soir">Soir</option></select>
+      <button class="btn-ai" id="btn-ai" onclick="askAI()">✨ IA</button>
+      <button class="btn-add" onclick="addTask()">Ajouter</button>
+    </div>
+    <div id="ai-sug" class="ai-sug hidden">✨ <span class="sug-r"></span></div>
+  </div>`;
+  if(!tasks.length){h+=`<div style="text-align:center;padding:2.5rem;font-size:14px;color:#86868B">Aucune tâche — ajoutes-en une !</div>`;document.getElementById('tab-backlog').innerHTML=h;return;}
+  h+=`<div class="bl-list">`;
+  [...tasks].sort((a,b)=>{if(a.done!==b.done)return a.done-b.done;return b.nearby-a.nearby;}).forEach(t=>{
+    h+=`<div class="bl-item${t.nearby&&!t.done?' nearby':''}" style="${t.done?'opacity:.5':''}">
+      <div class="mcheck${t.done?' done':''}" onclick="toggleDone(${t.id})" style="width:20px;height:20px"></div>
+      <div style="flex:1;min-width:0">
+        <div class="bl-text${t.done?' done':''}">${t.text}</div>${taskSub(t)}
+      </div>
+      <span class="cpill cat-${t.cat}">${catLabel(t.cat)}</span>
+      <span class="mpill">${ML[t.moment]}</span>
+      ${t.nearby&&!t.done?`<span class="dpill">${fmtDist(t.dist)}</span>`:''}
+      ${t.inFocus?`<span class="fpill">Focus</span>`:`<button class="btn-focus" onclick="addToFocus(${t.id})" ${!canFocus()?'disabled':''}>+ Focus</button>`}
+      <button class="btn-del" onclick="delTask(${t.id})">×</button>
+    </div>`;
+  });
+  h+='</div>';
+  document.getElementById('tab-backlog').innerHTML=h;
+}
+
+function renderMoments(){
+  let h='';
+  MOMENTS.forEach(m=>{
+    const items=tasks.filter(t=>t.moment===m), done=items.filter(t=>t.done).length;
+    h+=`<div class="moment-block">
+      <div class="moment-head">
+        <div class="mico" style="background:${MI[m].bg}">${MI[m].icon}</div>
+        <span class="mname">${ML[m]}</span>
+        <span class="mcnt">${done}/${items.length} faites</span>
+      </div><div>`;
+    if(!items.length)h+=`<div class="empty-m">Aucune tâche pour ce moment</div>`;
+    items.forEach(t=>{
+      h+=`<div class="moment-item${t.nearby&&!t.done?' nearby':''}">
+        <div class="mcheck${t.done?' done':''}" onclick="toggleDone(${t.id})"></div>
+        <div style="flex:1;min-width:0">
+          <div class="mi-text${t.done?' done':''}">${t.text}</div>${taskSub(t)}
+        </div>
+        <span class="cpill cat-${t.cat}">${catLabel(t.cat)}</span>
+        ${t.nearby&&!t.done?`<span class="dpill">${fmtDist(t.dist)}</span>`:''}
+        ${t.inFocus?`<span class="fpill">Focus</span>`:''}
+      </div>`;
+    });
+    h+=`</div></div>`;
+  });
+  document.getElementById('tab-moments').innerHTML=h;
+}
+
+function render(){renderFocus();renderBacklog();renderMoments();}
+loadData();
+</script>
+</body>
+</html>

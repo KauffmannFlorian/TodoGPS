@@ -149,9 +149,9 @@ function loadData(){
     if(raw){const d=JSON.parse(raw);tasks=d.tasks||[];nextId=d.nextId||tasks.length+1;}
     else{
       tasks=[
-        {id:1,text:"Acheter médicaments",cat:"sante",moment:"apresmidi",loc:"Pharmacie Jumeirah",coords:null,nearby:false,dist:null,inFocus:true,done:false},
-        {id:2,text:"Faire les courses",cat:"courses",moment:"soir",loc:"Carrefour Mall of Emirates",coords:null,nearby:false,dist:null,inFocus:true,done:false},
-        {id:3,text:"Répondre aux emails",cat:"travail",moment:"matin",loc:"",coords:null,nearby:false,dist:null,inFocus:true,done:false},
+        {id:1,text:"Tâche Al Yalayis 2",cat:"perso",moment:"matin",loc:"Al Yalayis 2, Dubai",coords:null,nearby:false,dist:null,inFocus:true,done:false},
+        {id:2,text:"Acheter médicaments",cat:"sante",moment:"apresmidi",loc:"Pharmacie Jumeirah",coords:null,nearby:false,dist:null,inFocus:true,done:false},
+        {id:3,text:"Faire les courses",cat:"courses",moment:"soir",loc:"Carrefour Mall of Emirates",coords:null,nearby:false,dist:null,inFocus:false,done:false},
         {id:4,text:"Appeler assurance",cat:"perso",moment:"matin",loc:"",coords:null,nearby:false,dist:null,inFocus:false,done:false},
       ];
       nextId=5;
@@ -340,7 +340,33 @@ function addTask(){
   if(userPos)setTimeout(checkProximity,300);
 }
 
-// ─── Render helpers ──────────────────────────────────────────
+async function simulateNearby(){
+  // Geocode le lieu de la première tâche avec loc, et simule une position à 100m
+  const t=tasks.find(x=>x.loc&&!x.done);
+  if(!t){alert('Aucune tâche avec un lieu à tester.');return;}
+  if(!t.coords)t.coords=await geocode(t.loc);
+  if(!t.coords){alert('Impossible de géocoder "'+t.loc+'" — vérifie le nom du lieu.');return;}
+  // Simule position à ~100m au nord du lieu
+  userPos={lat:t.coords.lat+0.0009,lon:t.coords.lon};
+  gpsActive=true;
+  window._gpsState={state:'active',msg:'🧪 Mode test — position simulée'};
+  currentPlaceName='Position simulée près de '+t.loc;
+  await checkProximity();
+  render();
+  // Teste la notification
+  if('Notification' in window){
+    if(Notification.permission==='granted'){
+      new Notification('🧪 Test notification',{body:'Les notifications fonctionnent ✅'});
+    } else if(Notification.permission==='default'){
+      const p=await Notification.requestPermission();
+      if(p==='granted')new Notification('🧪 Test notification',{body:'Les notifications fonctionnent ✅'});
+      else alert('Notifications refusées — autorise-les dans les paramètres du navigateur.');
+    } else {
+      alert('Notifications bloquées — autorise-les dans les paramètres du navigateur.');
+    }
+  }
+}
+
 function gpsBarHTML(){
   const s=window._gpsState||{state:'off',msg:'GPS désactivé'};
   const nb=tasks.filter(t=>t.nearby&&!t.done).length;
@@ -352,6 +378,7 @@ function gpsBarHTML(){
     <div class="gps-dot${dotCls}"></div>
     <div style="flex:1"><div class="gps-label">${s.msg}</div><div class="gps-sub">${sub}</div></div>
     ${nb>0?`<span class="nbadge">📍 ${nb}</span>`:''}
+    <button class="btn-gps" onclick="simulateNearby()" style="background:#FEF3E2;border-color:#FAD67A;color:#7A4D0A;margin-right:4px">🧪 Tester</button>
     <button class="btn-gps${gpsActive?' active':''}" onclick="toggleGPS()">${gpsActive?'Arrêter':'Activer GPS'}</button>
   </div>`;
 }

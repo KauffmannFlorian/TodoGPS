@@ -598,7 +598,11 @@ async function simulateNearby(){
 // ── Storage ───────────────────────────────────────────────────
 function loadData(){
   try{
-    const raw=localStorage.getItem('todo_gps_v5');
+    const raw=localStorage.getItem('todo_gps_v5')
+      ||localStorage.getItem('todo_gps_v4')
+      ||localStorage.getItem('todo_gps_v3')
+      ||localStorage.getItem('todo_gps_v2')
+      ||localStorage.getItem('todo_gps_v1');
     if(raw){const d=JSON.parse(raw);tasks=d.tasks||[];nextId=d.nextId||tasks.length+1;}
     else{
       tasks=[

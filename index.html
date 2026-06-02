@@ -283,21 +283,20 @@ async function deleteTaskDB(id){
 
 // ── Realtime ──────────────────────────────────────────────────
 function subscribeRealtime(){
-  // Polling toutes les 5s comme fallback (les websockets Supabase nécessitent la lib JS)
   setInterval(async()=>{
     try{
       const rows=await dbFetch('tasks?order=id.asc');
       const newTasks=rows.map(fromRow);
-      // Préserver nearby/dist calculés localement
-      newTasks.forEach(t=>{
-        const existing=tasks.find(x=>x.id===t.id);
-        if(existing){t.nearby=existing.nearby;t.dist=existing.dist;}
-      });
+      const sig=t=>t.id+'|'+t.done+'|'+t.inFocus+'|'+t.text+'|'+t.cat+'|'+t.moment;
+      const curr=tasks.map(sig).join(',');
+      const next=newTasks.map(sig).join(',');
+      if(curr===next) return;
+      newTasks.forEach(t=>{const e=tasks.find(x=>x.id===t.id);if(e){t.nearby=e.nearby;t.dist=e.dist;}});
       tasks=newTasks;
       setSyncBadge('ok','✓ Synchronisé');
       render();
     }catch(e){}
-  },5000);
+  },30000);
 }
 
 // ── Carte canvas ──────────────────────────────────────────────

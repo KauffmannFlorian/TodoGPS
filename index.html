@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Todo GPS</title>
+<title>Locdo — Todo GPS</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F5F5F7;color:#1D1D1F;min-height:100vh}
@@ -49,48 +49,67 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .sec-label{font-size:11px;font-weight:600;color:#86868B;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
 .add-box{background:#F9F9FB;border-radius:12px;border:1px solid #E5E5EA;padding:12px 14px;margin-bottom:12px}
 .add-row{display:flex;gap:6px;margin-bottom:6px}
-.add-row input{flex:1;border:1px solid #E5E5EA;border-radius:8px;padding:9px 12px;font-size:14px;background:#fff;font-family:inherit;outline:none;transition:border-color .15s}
+.add-row input{flex:1;border:1px solid #E5E5EA;border-radius:8px;padding:9px 12px;font-size:14px;background:#fff;font-family:inherit;outline:none}
 .add-row input:focus{border-color:#007AFF}
 .add-row3{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .add-row3 select{border:1px solid #E5E5EA;border-radius:8px;padding:8px 10px;font-size:13px;background:#fff;font-family:inherit;outline:none}
-.btn-map{border:1px solid #E5E5EA;border-radius:8px;padding:9px 12px;font-size:13px;color:#86868B;background:#fff;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s;width:100%;text-align:left}
+.btn-map{border:1px solid #E5E5EA;border-radius:8px;padding:9px 12px;font-size:13px;color:#86868B;background:#fff;cursor:pointer;font-family:inherit;transition:all .15s;width:100%;text-align:left;display:flex;align-items:center;gap:8px}
 .btn-map:hover{background:#F2F2F7}
 .btn-map.selected{background:#E8F9EE;border-color:#30D158;color:#1A5C2E}
 .btn-add{border:1px solid #007AFF;border-radius:8px;padding:8px 16px;font-size:14px;color:#007AFF;background:#E8F0FF;cursor:pointer;font-weight:500;font-family:inherit;margin-left:auto}
 .btn-add:hover{background:#CCE0FF}
 
-/* Modal */
-.map-modal{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;display:flex;align-items:flex-end;justify-content:center}
+/* ── Modal carte ── */
+.map-modal{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;display:flex;align-items:flex-end;justify-content:center}
 .map-modal.hidden{display:none}
-.map-sheet{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:680px;overflow:hidden;display:flex;flex-direction:column;max-height:92vh}
-.map-header{padding:14px 16px 10px;display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0}
-.map-title{font-size:15px;font-weight:600}
+.map-sheet{background:#fff;border-radius:24px 24px 0 0;width:100%;max-width:680px;overflow:hidden;display:flex;flex-direction:column;max-height:94vh;box-shadow:0 -8px 40px rgba(0,0,0,.15)}
+
+/* Header modal */
+.map-header{padding:16px 16px 0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.map-header-left{display:flex;flex-direction:column}
+.map-title{font-size:16px;font-weight:600;color:#1D1D1F}
 .map-hint{font-size:12px;color:#86868B;margin-top:2px}
-.btn-close-map{background:#F2F2F7;border:none;border-radius:50%;width:30px;height:30px;font-size:14px;cursor:pointer;color:#86868B;flex-shrink:0}
+.btn-close-map{width:32px;height:32px;border-radius:50%;border:none;background:#F2F2F7;cursor:pointer;font-size:15px;color:#86868B;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:inherit}
+.btn-close-map:hover{background:#E5E5EA}
 
-/* Recherche lieu */
-.search-row{padding:0 16px 10px;display:flex;gap:8px;flex-shrink:0}
-.search-inp{flex:1;border:1px solid #E5E5EA;border-radius:10px;padding:10px 14px;font-size:14px;font-family:inherit;outline:none;background:#F9F9FB}
-.search-inp:focus{border-color:#007AFF;background:#fff}
-.btn-search{border:1px solid #007AFF;border-radius:10px;padding:10px 14px;font-size:13px;color:#007AFF;background:#E8F0FF;cursor:pointer;font-family:inherit;white-space:nowrap}
-.btn-search:hover{background:#CCE0FF}
+/* Barre de recherche dans le modal */
+.map-search-row{padding:12px 16px 10px;flex-shrink:0;display:flex;gap:8px}
+.map-search-inp{flex:1;border:1px solid #E5E5EA;border-radius:10px;padding:10px 14px;font-size:14px;background:#F9F9FB;font-family:inherit;outline:none;transition:all .15s}
+.map-search-inp:focus{border-color:#007AFF;background:#fff}
+.btn-search-map{border:1px solid #007AFF;border-radius:10px;padding:10px 14px;font-size:13px;color:#007AFF;background:#E8F0FF;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0}
+.btn-search-map:hover{background:#CCE0FF}
 
-/* Résultats recherche */
-.search-results{flex-shrink:0;max-height:180px;overflow-y:auto;border-top:1px solid #E5E5EA}
-.search-result{padding:12px 16px;border-bottom:1px solid #F2F2F7;cursor:pointer;transition:background .1s}
-.search-result:hover{background:#F5F5F7}
-.search-result:last-child{border-bottom:none}
-.sr-name{font-size:14px;font-weight:500;color:#1D1D1F}
-.sr-addr{font-size:12px;color:#86868B;margin-top:2px}
-.search-loading{padding:16px;text-align:center;font-size:13px;color:#86868B}
-.search-empty{padding:16px;text-align:center;font-size:13px;color:#86868B}
+/* Toolbar carte */
+.map-toolbar{padding:0 16px 10px;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.map-zoom-group{display:flex;border:1px solid #E5E5EA;border-radius:10px;overflow:hidden;background:#fff}
+.btn-zoom{width:38px;height:36px;border:none;background:#fff;cursor:pointer;font-size:18px;font-weight:600;color:#1D1D1F;display:flex;align-items:center;justify-content:center;font-family:inherit;transition:background .15s}
+.btn-zoom:hover{background:#F2F2F7}
+.btn-zoom:first-child{border-right:1px solid #E5E5EA}
+.btn-gps-center{display:flex;align-items:center;gap:6px;border:1px solid #007AFF;border-radius:10px;padding:0 14px;height:36px;font-size:13px;color:#007AFF;background:#E8F0FF;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s}
+.btn-gps-center:hover{background:#CCE0FF}
+.map-zoom-level{margin-left:auto;font-size:12px;color:#86868B;background:#F2F2F7;padding:5px 10px;border-radius:8px}
 
-/* Preview sélection */
-.loc-confirm{padding:12px 16px;background:#E8F9EE;border-top:1px solid #30D158;display:flex;align-items:center;gap:10px;flex-shrink:0}
-.loc-confirm.hidden{display:none}
-.loc-confirm-name{font-size:13px;color:#1A5C2E;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.btn-confirm-map{border:1px solid #30D158;border-radius:8px;padding:8px 16px;font-size:13px;color:#1A5C2E;background:#fff;cursor:pointer;font-weight:500;font-family:inherit;white-space:nowrap;flex-shrink:0}
-.btn-confirm-map:hover{background:#E8F9EE}
+/* Canvas */
+#map-canvas{display:block;cursor:crosshair;touch-action:none;width:100%;flex:1;min-height:280px}
+.map-loading-msg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(255,255,255,.9);border-radius:10px;padding:10px 16px;font-size:13px;color:#86868B;pointer-events:none;white-space:nowrap}
+
+/* Canvas wrapper */
+.map-canvas-wrap{flex:1;position:relative;overflow:hidden;border-top:1px solid #F2F2F7;border-bottom:1px solid #F2F2F7}
+
+/* Crosshair central */
+.map-crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;opacity:.3}
+
+/* Footer modal */
+.map-footer{padding:12px 16px;display:flex;gap:10px;align-items:center;flex-shrink:0}
+.map-picked-wrap{flex:1;min-width:0}
+.map-picked-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#86868B;margin-bottom:2px}
+.map-picked-val{font-size:13px;color:#1D1D1F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.map-picked-val.empty{color:#C7C7CC}
+.btn-confirm-map{border:none;border-radius:10px;padding:10px 20px;font-size:14px;font-weight:600;background:#007AFF;color:#fff;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;transition:all .15s}
+.btn-confirm-map:hover{background:#0062CC}
+.btn-confirm-map:disabled{background:#C7C7CC;cursor:default}
+.btn-mypos{border:1px solid #E5E5EA;border-radius:10px;padding:10px 14px;font-size:13px;color:#1D1D1F;background:#fff;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;display:flex;align-items:center;gap:6px;transition:all .15s}
+.btn-mypos:hover{background:#F2F2F7;border-color:#C7C7CC}
 
 /* Pills */
 .cpill{font-size:11px;padding:3px 9px;border-radius:999px;flex-shrink:0;font-weight:500}
@@ -133,38 +152,55 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </head>
 <body>
 
-<!-- Modal lieu -->
+<!-- Modal carte -->
 <div class="map-modal hidden" id="map-modal">
   <div class="map-sheet">
     <div class="map-header">
-      <div><div class="map-title">Choisir un lieu</div><div class="map-hint">Recherche un endroit ou utilise ta position</div></div>
+      <div class="map-header-left">
+        <div class="map-title">📍 Choisir un lieu</div>
+        <div class="map-hint">Navigue sur la carte et tape pour épingler</div>
+      </div>
       <button class="btn-close-map" onclick="closeMap()">✕</button>
     </div>
-    <div class="search-row">
-      <input class="search-inp" id="search-inp" placeholder="Chercher un lieu (ex: Al Yalayis 2...)" onkeydown="if(event.key==='Enter')searchPlace()"/>
-      <button class="btn-search" onclick="searchPlace()">Chercher</button>
-    </div>
-    <div id="search-results" class="search-results" style="display:none"></div>
 
-    <!-- Bouton position actuelle -->
-    <div style="padding:0 16px 12px;display:flex;gap:8px;flex-shrink:0;border-bottom:1px solid #E5E5EA">
-      <button onclick="useCurrentPos()" style="flex:1;border:1px solid #E5E5EA;border-radius:10px;padding:10px;font-size:13px;background:#fff;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;color:#1D1D1F">
-        📍 Utiliser ma position actuelle
+    <!-- Recherche textuelle -->
+    <div class="map-search-row">
+      <input class="map-search-inp" id="map-search-inp" placeholder="Rechercher un lieu..." onkeydown="if(event.key==='Enter')mapSearch()"/>
+      <button class="btn-search-map" onclick="mapSearch()">Chercher</button>
+    </div>
+
+    <!-- Toolbar zoom + ma position -->
+    <div class="map-toolbar">
+      <div class="map-zoom-group">
+        <button class="btn-zoom" onclick="mapZoom(1)" title="Zoom +">+</button>
+        <button class="btn-zoom" onclick="mapZoom(-1)" title="Zoom -">−</button>
+      </div>
+      <button class="btn-gps-center" onclick="mapCenterGPS()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+        Ma position
       </button>
+      <span class="map-zoom-level" id="map-zoom-label">Zoom 12</span>
     </div>
 
-    <!-- Confirmation lieu sélectionné -->
-    <div class="loc-confirm hidden" id="loc-confirm">
-      <span style="font-size:18px">✅</span>
-      <span class="loc-confirm-name" id="loc-confirm-name"></span>
-      <button class="btn-confirm-map" onclick="confirmMap()">Confirmer</button>
+    <!-- Canvas carte -->
+    <div class="map-canvas-wrap">
+      <canvas id="map-canvas"></canvas>
+      <div id="map-loading" style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.92);border-radius:20px;padding:6px 14px;font-size:12px;color:#86868B;box-shadow:0 2px 8px rgba(0,0,0,.12);pointer-events:none;white-space:nowrap">
+        Chargement de la carte...
+      </div>
     </div>
 
-    <!-- Info si rien sélectionné -->
-    <div id="loc-empty" style="padding:24px 16px;text-align:center;flex:1">
-      <div style="font-size:36px;margin-bottom:10px">🗺️</div>
-      <div style="font-size:14px;font-weight:500;color:#1D1D1F;margin-bottom:6px">Recherche un lieu</div>
-      <div style="font-size:13px;color:#86868B">Tape le nom d'un endroit ou utilise<br>ta position GPS actuelle</div>
+    <!-- Footer confirmation -->
+    <div class="map-footer">
+      <button class="btn-mypos" onclick="useCurrentPos()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#007AFF" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+        Ici
+      </button>
+      <div class="map-picked-wrap">
+        <div class="map-picked-label">Lieu sélectionné</div>
+        <div class="map-picked-val empty" id="map-picked">Appuie sur la carte</div>
+      </div>
+      <button class="btn-confirm-map" id="btn-confirm-map" onclick="confirmMap()" disabled>Confirmer</button>
     </div>
   </div>
 </div>
@@ -185,129 +221,311 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </div>
 
 <script>
-const MAX=10, RADIUS=500;
+const MAX=10, RADIUS=500, TILE=256;
 const MOMENTS=['matin','apresmidi','soir'];
 const ML={matin:'Matin',apresmidi:'Après-midi',soir:'Soir'};
 const MI={matin:{bg:'#FEF3E2',icon:'🌅'},apresmidi:{bg:'#E8F0FF',icon:'☀️'},soir:{bg:'#EDEDF8',icon:'🌙'}};
 
-let tasks=[], nextId=1, currentTab='focus', saveTimer=null;
+let tasks=[], nextId=1, saveTimer=null;
 let gpsActive=false, gpsWatcher=null, userPos=null, currentPlaceName=null;
 let notifiedIds=new Set();
 let newTaskCoords=null, newTaskLocName=null;
-let pickedCoords=null, pickedName=null;
-let searchTimer=null;
 
-// ─── Storage ─────────────────────────────────────────────────
-function loadData(){
-  try{
-    const raw=localStorage.getItem('todo_gps_v4');
-    if(raw){const d=JSON.parse(raw);tasks=d.tasks||[];nextId=d.nextId||tasks.length+1;}
-    else{
-      tasks=[
-        {id:1,text:"Faire la demande de Move-in permit",cat:"perso",moment:"matin",locName:"",coords:null,nearby:false,dist:null,inFocus:true,done:false},
-        {id:2,text:"Acheter médicaments",cat:"sante",moment:"apresmidi",locName:"",coords:null,nearby:false,dist:null,inFocus:true,done:false},
-        {id:3,text:"Faire les courses",cat:"courses",moment:"soir",locName:"",coords:null,nearby:false,dist:null,inFocus:false,done:false},
-        {id:4,text:"Appeler assurance",cat:"perso",moment:"matin",locName:"",coords:null,nearby:false,dist:null,inFocus:false,done:false},
-      ];
-      nextId=5;
-    }
-  }catch(e){tasks=[];nextId=1;}
-  setSave('Sauvegardé'); render();
+// ── Carte ─────────────────────────────────────────────────────
+let mv={lat:25.2048,lon:55.2708,zoom:12};
+let canvas, ctx, tileCache={}, pickedCoords=null;
+let drag=null, pinchDist0=null, isDragging=false;
+let tilesLoaded=0, tilesTotal=0;
+
+function lon2x(lon,z){return(lon+180)/360*Math.pow(2,z);}
+function lat2y(lat,z){return(1-Math.log(Math.tan(lat*Math.PI/180)+1/Math.cos(lat*Math.PI/180))/Math.PI)/2*Math.pow(2,z);}
+function x2lon(x,z){return x/Math.pow(2,z)*360-180;}
+function y2lat(y,z){return Math.atan(Math.sinh(Math.PI*(1-2*y/Math.pow(2,z))))*180/Math.PI;}
+
+function ll2px(lat,lon){
+  const n=Math.pow(2,mv.zoom);
+  const cx=canvas.width/2, cy=canvas.height/2;
+  return{x:cx+(lon2x(lon,mv.zoom)-lon2x(mv.lon,mv.zoom))*TILE,
+         y:cy+(lat2y(lat,mv.zoom)-lat2y(mv.lat,mv.zoom))*TILE};
 }
-function saveData(){
-  setSave('Sauvegarde...');
-  try{localStorage.setItem('todo_gps_v4',JSON.stringify({tasks,nextId}));setSave('✓ Sauvegardé');}
-  catch(e){setSave('Erreur');}
+function px2ll(px,py){
+  const cx=canvas.width/2, cy=canvas.height/2;
+  return{lat:y2lat(lat2y(mv.lat,mv.zoom)+(py-cy)/TILE,mv.zoom),
+         lon:x2lon(lon2x(mv.lon,mv.zoom)+(px-cx)/TILE,mv.zoom)};
 }
-function scheduleSave(){if(saveTimer)clearTimeout(saveTimer);setSave('...');saveTimer=setTimeout(saveData,600);}
-function setSave(t){const el=document.getElementById('save-txt');if(el)el.textContent=t;}
 
-// ─── Recherche lieu ──────────────────────────────────────────
-async function searchPlace(){
-  const q=document.getElementById('search-inp').value.trim();
-  if(!q) return;
-  const el=document.getElementById('search-results');
-  el.style.display='block';
-  el.innerHTML=`<div class="search-loading">🔍 Recherche en cours...</div>`;
-  document.getElementById('loc-empty').style.display='none';
+function getTile(tx,ty,z){
+  const key=`${z}/${tx}/${ty}`;
+  if(tileCache[key]) return tileCache[key];
+  const img=new Image(); img.crossOrigin='anonymous';
+  // Essai avec plusieurs serveurs OSM
+  const servers=['a','b','c'];
+  const s=servers[(tx+ty)%3];
+  img.src=`https://${s}.tile.openstreetmap.org/${z}/${tx}/${ty}.png`;
+  tilesTotal++;
+  img.onload=()=>{tileCache[key]=img; tilesLoaded++; drawMap();};
+  img.onerror=()=>{
+    // Fallback CARTO
+    const img2=new Image(); img2.crossOrigin='anonymous';
+    img2.src=`https://a.basemaps.cartocdn.com/rastertiles/voyager_labels_under/${z}/${tx}/${ty}.png`;
+    img2.onload=()=>{tileCache[key]=img2; tilesLoaded++; drawMap();};
+    img2.onerror=()=>{tileCache[key]='err'; drawMap();};
+  };
+  tileCache[key]=null;
+  return null;
+}
 
-  try{
-    // Photon API (OpenStreetMap) — CORS friendly
-    const url=`https://photon.komoot.io/api/?q=${encodeURIComponent(q+' Dubai')}&limit=5&lang=fr`;
-    const res=await fetch(url);
-    const data=await res.json();
-    const features=data.features||[];
-    if(!features.length){
-      el.innerHTML=`<div class="search-empty">Aucun résultat — essaie un autre nom</div>`;
-      return;
+function drawMap(){
+  if(!canvas||!ctx) return;
+  const W=canvas.width, H=canvas.height;
+  const z=Math.round(Math.max(1,Math.min(19,mv.zoom)));
+  const n=Math.pow(2,z);
+
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#E8EAE8'; ctx.fillRect(0,0,W,H);
+
+  const cx=W/2, cy=H/2;
+  const cx_t=lon2x(mv.lon,z), cy_t=lat2y(mv.lat,z);
+  const x0=Math.floor(cx_t-cx/TILE)-1, y0=Math.floor(cy_t-cy/TILE)-1;
+  const x1=Math.floor(cx_t+cx/TILE)+1, y1=Math.floor(cy_t+cy/TILE)+1;
+
+  let pending=0;
+  for(let tx=x0;tx<=x1;tx++){
+    for(let ty=y0;ty<=y1;ty++){
+      if(ty<0||ty>=n) continue;
+      const px=Math.round(cx+(tx-cx_t)*TILE);
+      const py=Math.round(cy+(ty-cy_t)*TILE);
+      const img=getTile((tx%n+n)%n, ty, z);
+      if(img&&img!=='err'&&img.complete&&img.naturalWidth>0){
+        ctx.drawImage(img,px,py,TILE,TILE);
+      } else {
+        ctx.fillStyle='#DDE0DC'; ctx.fillRect(px,py,TILE,TILE);
+        ctx.strokeStyle='#C8CBC7'; ctx.lineWidth=.5; ctx.strokeRect(px,py,TILE,TILE);
+        if(!img) pending++;
+      }
     }
-    el.innerHTML=features.map((f,i)=>{
-      const name=f.properties.name||f.properties.street||'Lieu';
-      const city=f.properties.city||f.properties.state||'';
-      const country=f.properties.country||'';
-      const addr=[city,country].filter(Boolean).join(', ');
-      const lat=f.geometry.coordinates[1], lon=f.geometry.coordinates[0];
-      return`<div class="search-result" onclick="selectPlace(${lat},${lon},'${(name+', '+addr).replace(/'/g,"\\'")}')">
-        <div class="sr-name">${name}</div>
-        ${addr?`<div class="sr-addr">${addr}</div>`:''}
-      </div>`;
-    }).join('');
-  }catch(e){
-    el.innerHTML=`<div class="search-empty">Erreur réseau — vérifie ta connexion</div>`;
+  }
+
+  // Loading indicator
+  const loadEl=document.getElementById('map-loading');
+  if(loadEl) loadEl.style.display=pending>0?'block':'none';
+
+  // Position GPS (point bleu)
+  if(userPos){
+    const p=ll2px(userPos.lat,userPos.lon);
+    ctx.beginPath(); ctx.arc(p.x,p.y,14,0,Math.PI*2);
+    ctx.fillStyle='rgba(0,122,255,.15)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(p.x,p.y,7,0,Math.PI*2);
+    ctx.fillStyle='#007AFF'; ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=2.5; ctx.stroke();
+  }
+
+  // Pin épinglé
+  if(pickedCoords){
+    const p=ll2px(pickedCoords.lat,pickedCoords.lon);
+    drawPin(p.x,p.y,'#007AFF');
+  }
+
+  // Pins des tâches avec lieu
+  tasks.filter(t=>t.coords&&!t.done).forEach(t=>{
+    const p=ll2px(t.coords.lat,t.coords.lon);
+    if(p.x>-20&&p.x<W+20&&p.y>-40&&p.y<H+20){
+      drawPin(p.x,p.y,t.nearby?'#30D158':'#FF9F0A');
+      // Étiquette
+      ctx.fillStyle='rgba(0,0,0,.7)';
+      const label=t.text.substring(0,18)+(t.text.length>18?'…':'');
+      const tw=ctx.measureText(label).width+16;
+      ctx.beginPath(); roundRect(ctx,p.x-tw/2,p.y-52,tw,20,6); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.font='11px -apple-system,sans-serif';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(label,p.x,p.y-42);
+    }
+  });
+
+  // Attribution
+  ctx.fillStyle='rgba(255,255,255,.8)';
+  ctx.fillRect(0,H-18,220,18);
+  ctx.fillStyle='#666'; ctx.font='10px sans-serif';
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  ctx.fillText('© OpenStreetMap contributors',4,H-4);
+
+  // Zoom label
+  const zl=document.getElementById('map-zoom-label');
+  if(zl) zl.textContent=`Zoom ${z}`;
+}
+
+function drawPin(x,y,color){
+  // Ombre
+  ctx.beginPath(); ctx.arc(x,y+2,10,0,Math.PI*2);
+  ctx.fillStyle='rgba(0,0,0,.15)'; ctx.fill();
+  // Corps du pin
+  ctx.beginPath();
+  ctx.arc(x,y-14,10,0,Math.PI*2);
+  ctx.fillStyle=color; ctx.fill();
+  ctx.strokeStyle='#fff'; ctx.lineWidth=2.5; ctx.stroke();
+  // Pointe
+  ctx.beginPath();
+  ctx.moveTo(x-5,y-8); ctx.lineTo(x,y+2); ctx.lineTo(x+5,y-8);
+  ctx.fillStyle=color; ctx.fill();
+  // Point blanc central
+  ctx.beginPath(); ctx.arc(x,y-14,4,0,Math.PI*2);
+  ctx.fillStyle='rgba(255,255,255,.9)'; ctx.fill();
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
+  ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath();
+}
+
+function initMap(){
+  canvas=document.getElementById('map-canvas');
+  if(!canvas) return;
+  ctx=canvas.getContext('2d');
+  const wrap=canvas.parentElement;
+  canvas.width=wrap.clientWidth||360;
+  canvas.height=Math.min(window.innerHeight*.48,340);
+  tileCache={};
+
+  // Clic / tap
+  canvas.addEventListener('click',e=>{
+    if(isDragging) return;
+    const r=canvas.getBoundingClientRect();
+    const p=px2ll(e.clientX-r.left, e.clientY-r.top);
+    setPicked(p.lat,p.lon);
+  });
+
+  // Drag souris
+  canvas.addEventListener('mousedown',e=>{drag={x:e.clientX,y:e.clientY,lat:mv.lat,lon:mv.lon};isDragging=false;});
+  canvas.addEventListener('mousemove',e=>{
+    if(!drag) return;
+    const dx=e.clientX-drag.x, dy=e.clientY-drag.y;
+    if(Math.abs(dx)>4||Math.abs(dy)>4) isDragging=true;
+    if(isDragging){
+      const z=mv.zoom;
+      mv.lat=y2lat(lat2y(drag.lat,z)-dy/TILE,z);
+      mv.lon=x2lon(lon2x(drag.lon,z)-dx/TILE,z);
+      drawMap();
+    }
+  });
+  canvas.addEventListener('mouseup',()=>{drag=null; setTimeout(()=>isDragging=false,10);});
+  canvas.addEventListener('mouseleave',()=>drag=null);
+
+  // Touch
+  canvas.addEventListener('touchstart',e=>{
+    if(e.touches.length===1){
+      isDragging=false;
+      drag={x:e.touches[0].clientX,y:e.touches[0].clientY,lat:mv.lat,lon:mv.lon};
+    } else if(e.touches.length===2){
+      pinchDist0=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    }
+    e.preventDefault();
+  },{passive:false});
+
+  canvas.addEventListener('touchmove',e=>{
+    if(e.touches.length===1&&drag){
+      const dx=e.touches[0].clientX-drag.x, dy=e.touches[0].clientY-drag.y;
+      if(Math.abs(dx)>4||Math.abs(dy)>4) isDragging=true;
+      if(isDragging){
+        const z=mv.zoom;
+        mv.lat=y2lat(lat2y(drag.lat,z)-dy/TILE,z);
+        mv.lon=x2lon(lon2x(drag.lon,z)-dx/TILE,z);
+        drawMap();
+      }
+    } else if(e.touches.length===2&&pinchDist0){
+      const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+      const delta=d-pinchDist0;
+      if(Math.abs(delta)>8){
+        mv.zoom=Math.max(2,Math.min(19,mv.zoom+(delta>0?.5:-.5)));
+        pinchDist0=d; tileCache={}; drawMap();
+      }
+    }
+    e.preventDefault();
+  },{passive:false});
+
+  canvas.addEventListener('touchend',e=>{
+    if(e.changedTouches.length===1&&!isDragging&&drag){
+      const r=canvas.getBoundingClientRect();
+      const p=px2ll(e.changedTouches[0].clientX-r.left, e.changedTouches[0].clientY-r.top);
+      setPicked(p.lat,p.lon);
+    }
+    drag=null; pinchDist0=null; setTimeout(()=>isDragging=false,10);
+  });
+
+  // Scroll zoom
+  canvas.addEventListener('wheel',e=>{
+    e.preventDefault();
+    mv.zoom=Math.max(2,Math.min(19,mv.zoom+(e.deltaY<0?.5:-.5)));
+    tileCache={}; drawMap();
+  },{passive:false});
+
+  drawMap();
+}
+
+function setPicked(lat,lon){
+  pickedCoords={lat,lon};
+  const el=document.getElementById('map-picked');
+  el.textContent=`${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+  el.classList.remove('empty');
+  document.getElementById('btn-confirm-map').disabled=false;
+  drawMap();
+}
+
+function mapZoom(d){mv.zoom=Math.max(2,Math.min(19,mv.zoom+d));tileCache={};drawMap();}
+
+function mapCenterGPS(){
+  if(userPos){mv.lat=userPos.lat;mv.lon=userPos.lon;mv.zoom=16;tileCache={};drawMap();}
+  else{
+    navigator.geolocation.getCurrentPosition(p=>{
+      mv.lat=p.coords.latitude;mv.lon=p.coords.longitude;mv.zoom=16;tileCache={};drawMap();
+    },()=>alert('GPS non disponible.'),{enableHighAccuracy:true,timeout:8000});
   }
 }
 
-function selectPlace(lat,lon,name){
-  pickedCoords={lat,lon};
-  pickedName=name;
-  document.getElementById('search-results').style.display='none';
-  document.getElementById('loc-empty').style.display='none';
-  const conf=document.getElementById('loc-confirm');
-  conf.classList.remove('hidden');
-  document.getElementById('loc-confirm-name').textContent=`📍 ${name}`;
+async function mapSearch(){
+  const q=document.getElementById('map-search-inp').value.trim();
+  if(!q) return;
+  try{
+    const url=`https://photon.komoot.io/api/?q=${encodeURIComponent(q+' Dubai')}&limit=1&lang=fr`;
+    const res=await fetch(url);
+    const data=await res.json();
+    if(data.features&&data.features[0]){
+      const f=data.features[0];
+      const lat=f.geometry.coordinates[1], lon=f.geometry.coordinates[0];
+      mv.lat=lat; mv.lon=lon; mv.zoom=16;
+      tileCache={}; setPicked(lat,lon); drawMap();
+    } else alert('Lieu introuvable — essaie un autre nom.');
+  }catch(e){alert('Erreur réseau.');}
 }
 
 function useCurrentPos(){
-  if(!userPos){
-    // Demande la position si GPS pas encore actif
-    navigator.geolocation.getCurrentPosition(pos=>{
-      pickedCoords={lat:pos.coords.latitude,lon:pos.coords.longitude};
-      pickedName=`Ma position (${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)})`;
-      document.getElementById('loc-empty').style.display='none';
-      document.getElementById('search-results').style.display='none';
-      const conf=document.getElementById('loc-confirm');
-      conf.classList.remove('hidden');
-      document.getElementById('loc-confirm-name').textContent=`📍 ${pickedName}`;
-    },()=>alert('Impossible de récupérer ta position.'),{enableHighAccuracy:true,timeout:8000});
-  } else {
-    pickedCoords={...userPos};
-    pickedName=`Ma position (${userPos.lat.toFixed(4)}, ${userPos.lon.toFixed(4)})`;
-    document.getElementById('loc-empty').style.display='none';
-    document.getElementById('search-results').style.display='none';
-    const conf=document.getElementById('loc-confirm');
-    conf.classList.remove('hidden');
-    document.getElementById('loc-confirm-name').textContent=`📍 ${pickedName}`;
-  }
+  const go=(lat,lon)=>{mv.lat=lat;mv.lon=lon;mv.zoom=16;tileCache={};setPicked(lat,lon);drawMap();};
+  if(userPos) go(userPos.lat,userPos.lon);
+  else navigator.geolocation.getCurrentPosition(p=>go(p.coords.latitude,p.coords.longitude),()=>alert('GPS non disponible.'),{enableHighAccuracy:true,timeout:8000});
 }
 
 function openMap(){
   document.getElementById('map-modal').classList.remove('hidden');
-  pickedCoords=null; pickedName=null;
-  document.getElementById('search-inp').value='';
-  document.getElementById('search-results').style.display='none';
-  document.getElementById('loc-confirm').classList.add('hidden');
-  document.getElementById('loc-empty').style.display='block';
-  setTimeout(()=>document.getElementById('search-inp').focus(),100);
+  pickedCoords=null;
+  document.getElementById('map-picked').textContent='Appuie sur la carte';
+  document.getElementById('map-picked').classList.add('empty');
+  document.getElementById('btn-confirm-map').disabled=true;
+  document.getElementById('map-search-inp').value='';
+  if(userPos){mv.lat=userPos.lat;mv.lon=userPos.lon;mv.zoom=15;}
+  setTimeout(initMap,60);
 }
 function closeMap(){document.getElementById('map-modal').classList.add('hidden');}
 function confirmMap(){
   if(!pickedCoords) return;
   newTaskCoords=pickedCoords;
-  newTaskLocName=pickedName;
+  newTaskLocName=`${pickedCoords.lat.toFixed(4)}, ${pickedCoords.lon.toFixed(4)}`;
   closeMap(); render();
 }
 
-// ─── GPS ─────────────────────────────────────────────────────
+// ── GPS ───────────────────────────────────────────────────────
 function haversine(lat1,lon1,lat2,lon2){
   const R=6371000,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;
   const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
@@ -354,9 +572,7 @@ function checkProximity(){
     if(t.nearby&&!was&&!notifiedIds.has(t.id)){
       notifiedIds.add(t.id);
       if('Notification' in window&&Notification.permission==='granted'){
-        new Notification('📍 Tâche à proximité !',{
-          body:`"${t.text}"${t.locName?' — '+t.locName:''} à ${fmtDist(d)} de toi.`
-        });
+        new Notification('📍 Tâche à proximité !',{body:`"${t.text}" à ${fmtDist(d)} de toi.`});
       }
     }
     if(!t.nearby) notifiedIds.delete(t.id);
@@ -368,23 +584,47 @@ function checkProximity(){
 
 async function simulateNearby(){
   const t=tasks.find(x=>x.coords&&!x.done);
-  if(!t){alert('Ajoute d\'abord une tâche avec un lieu.');return;}
+  if(!t){alert('Ajoute d\'abord une tâche avec un lieu épinglé sur la carte.');return;}
   userPos={lat:t.coords.lat+0.001,lon:t.coords.lon};
   gpsActive=true; window._gpsState={state:'active',msg:'🧪 Mode test'};
   currentPlaceName='Position simulée'; notifiedIds=new Set();
   checkProximity();
   if('Notification' in window){
-    if(Notification.permission==='granted') new Notification('🧪 Test',{body:'Notifications OK ✅'});
+    if(Notification.permission==='granted') new Notification('🧪 Test notifications',{body:'Fonctionne ✅'});
     else{const p=await Notification.requestPermission();if(p==='granted') new Notification('🧪 Test',{body:'OK ✅'});}
   }
 }
 
-// ─── Task ops ────────────────────────────────────────────────
+// ── Storage ───────────────────────────────────────────────────
+function loadData(){
+  try{
+    const raw=localStorage.getItem('todo_gps_v5');
+    if(raw){const d=JSON.parse(raw);tasks=d.tasks||[];nextId=d.nextId||tasks.length+1;}
+    else{
+      tasks=[
+        {id:1,text:"Faire la demande de Move-in permit",cat:"perso",moment:"matin",locName:"",coords:null,nearby:false,dist:null,inFocus:true,done:false},
+        {id:2,text:"Acheter médicaments",cat:"sante",moment:"apresmidi",locName:"",coords:null,nearby:false,dist:null,inFocus:true,done:false},
+        {id:3,text:"Faire les courses",cat:"courses",moment:"soir",locName:"",coords:null,nearby:false,dist:null,inFocus:false,done:false},
+        {id:4,text:"Appeler assurance",cat:"perso",moment:"matin",locName:"",coords:null,nearby:false,dist:null,inFocus:false,done:false},
+      ];
+      nextId=5;
+    }
+  }catch(e){tasks=[];nextId=1;}
+  setSave('Sauvegardé'); render();
+}
+function saveData(){
+  setSave('Sauvegarde...');
+  try{localStorage.setItem('todo_gps_v5',JSON.stringify({tasks,nextId}));setSave('✓ Sauvegardé');}
+  catch(e){setSave('Erreur');}
+}
+function scheduleSave(){if(saveTimer)clearTimeout(saveTimer);setSave('...');saveTimer=setTimeout(saveData,600);}
+function setSave(t){const el=document.getElementById('save-txt');if(el)el.textContent=t;}
+
+// ── Task ops ──────────────────────────────────────────────────
 function catLabel(c){return{perso:'Perso',travail:'Travail',courses:'Courses',sante:'Santé',autre:'Autre'}[c]||c;}
 function focusTasks(){return tasks.filter(t=>t.inFocus);}
 function canFocus(){return focusTasks().length<3;}
 function showTab(t){
-  currentTab=t;
   document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['focus','backlog','moments'][i]===t));
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('visible'));
   document.getElementById('tab-'+t).classList.add('visible'); render();
@@ -410,7 +650,7 @@ function addTask(){
   if(userPos) checkProximity();
 }
 
-// ─── Render ──────────────────────────────────────────────────
+// ── Render ────────────────────────────────────────────────────
 function gpsBarHTML(){
   const s=window._gpsState||{state:'off',msg:'GPS désactivé'};
   const nb=tasks.filter(t=>t.nearby&&!t.done).length;
@@ -429,7 +669,7 @@ function nearbyHTML(){
   if(!nb.length||!gpsActive) return'';
   return`<div class="nearby-alert"><span style="font-size:18px;flex-shrink:0">📍</span>
     <div><strong>${nb.length} tâche${nb.length>1?'s':''} à moins de ${RADIUS}m :</strong><br>
-    ${nb.map(t=>`${t.text}${t.locName?` — <em>${t.locName}</em>`:''} <span class="dpill">${fmtDist(t.dist)}</span>`).join('<br>')}</div></div>`;
+    ${nb.map(t=>`${t.text} <span class="dpill">${fmtDist(t.dist)}</span>`).join('<br>')}</div></div>`;
 }
 function taskSub(t){
   if(!t.coords) return'';
@@ -480,10 +720,13 @@ function renderBacklog(){
   let h=`<div class="count-row"><span class="sec-label">Toutes les tâches</span><span class="${pc}">${tasks.length}/${MAX}</span></div>`;
   if(full) h+=`<div class="limit-msg">⚠️ Limite atteinte — supprime une tâche pour en ajouter.</div>`;
   else{
-    const locLabel=newTaskLocName?`📍 ${newTaskLocName}`:'📍 Ajouter un lieu (optionnel)';
+    const locLabel=newTaskLocName?`📍 Lieu épinglé ✓`:'📍 Épingler sur la carte (optionnel)';
     h+=`<div class="add-box">
       <div class="add-row"><input type="text" id="new-task-inp" placeholder="Nouvelle tâche..." onkeydown="if(event.key==='Enter')addTask()"/></div>
-      <div class="add-row"><button class="btn-map${newTaskLocName?' selected':''}" onclick="openMap()">${locLabel}</button></div>
+      <div class="add-row"><button class="btn-map${newTaskLocName?' selected':''}" onclick="openMap()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+        ${locLabel}
+      </button></div>
       <div class="add-row3">
         <select id="new-cat-sel"><option value="autre">Autre</option><option value="courses">Courses</option><option value="travail">Travail</option><option value="sante">Santé</option><option value="perso">Perso</option></select>
         <select id="new-moment-sel"><option value="matin">Matin</option><option value="apresmidi">Après-midi</option><option value="soir">Soir</option></select>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Locdo — Todo GPS</title>
+<title>Todo GPS</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F5F5F7;color:#1D1D1F;min-height:100vh}
@@ -125,6 +125,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .mi-text{font-size:14px;flex:1;min-width:0}
 .mi-text.done{text-decoration:line-through;color:#86868B}
 .empty-m{padding:14px;font-size:13px;color:#86868B}
+
+.edit-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:3000;display:flex;align-items:flex-end;justify-content:center}
+.edit-modal.hidden{display:none}
+.edit-sheet{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:680px;padding:20px 16px 32px;box-shadow:0 -8px 40px rgba(0,0,0,.15)}
+.edit-sheet h3{font-size:15px;font-weight:600;margin-bottom:16px;color:#1D1D1F}
+.edit-row{margin-bottom:12px}
+.edit-row label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#86868B;display:block;margin-bottom:5px}
+.edit-row input,.edit-row select{width:100%;border:1px solid #E5E5EA;border-radius:8px;padding:10px 12px;font-size:14px;background:#fff;font-family:inherit;outline:none}
+.edit-row input:focus,.edit-row select:focus{border-color:#007AFF}
+.edit-loc-btn{width:100%;border:1px solid #E5E5EA;border-radius:8px;padding:10px 12px;font-size:13px;background:#fff;font-family:inherit;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;color:#86868B;transition:all .15s}
+.edit-loc-btn.has-loc{background:#E8F9EE;border-color:#30D158;color:#1A5C2E}
+.edit-actions{display:flex;gap:8px;margin-top:16px}
+.btn-edit-save{flex:1;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:600;background:#007AFF;color:#fff;cursor:pointer;font-family:inherit}
+.btn-edit-cancel{border:1px solid #E5E5EA;border-radius:10px;padding:12px 20px;font-size:14px;background:#fff;color:#86868B;cursor:pointer;font-family:inherit}
+.btn-edit-icon{background:none;border:none;cursor:pointer;padding:4px 6px;color:#86868B;opacity:.6;font-size:16px}
+.btn-edit-icon:hover{opacity:1}
 </style>
 </head>
 <body>
@@ -671,6 +687,7 @@ function renderBacklog(){
       <span class="mpill">${ML[t.moment]}</span>
       ${t.nearby&&!t.done?`<span class="dpill">${fmtDist(t.dist)}</span>`:''}
       ${t.inFocus?`<span class="fpill">Focus</span>`:`<button class="btn-focus" onclick="addToFocus(${t.id})" ${!canFocus()?'disabled':''}>+ Focus</button>`}
+      <button class="btn-edit-icon" onclick="openEdit(${t.id})" title="Modifier">✏️</button>
       <button class="btn-del" onclick="delTask(${t.id})">×</button>
     </div>`;
   });
@@ -696,6 +713,78 @@ function renderMoments(){
   });
   document.getElementById('tab-moments').innerHTML=h;
 }
+
+// ── Edition ───────────────────────────────────────────────────
+let editingId=null, editCoords=null, editLocName=null;
+
+function openEdit(id){
+  const t=tasks.find(x=>x.id===id);
+  if(!t) return;
+  editingId=id;
+  editCoords=t.coords?{...t.coords}:null;
+  editLocName=t.locName||'';
+  document.getElementById('edit-text').value=t.text;
+  document.getElementById('edit-cat').value=t.cat||'autre';
+  document.getElementById('edit-moment').value=t.moment||'matin';
+  const locBtn=document.getElementById('edit-loc-btn');
+  const locLabel=document.getElementById('edit-loc-label');
+  if(editCoords){locBtn.classList.add('has-loc');locLabel.textContent='📍 '+editLocName;}
+  else{locBtn.classList.remove('has-loc');locLabel.textContent='Ajouter un lieu sur la carte';}
+  document.getElementById('edit-modal').classList.remove('hidden');
+}
+
+function closeEdit(){
+  document.getElementById('edit-modal').classList.add('hidden');
+  editingId=null;editCoords=null;editLocName=null;
+}
+
+function openMapForEdit(){
+  // Ferme temporairement le modal édition, ouvre la carte
+  document.getElementById('edit-modal').classList.add('hidden');
+  window._editMapMode=true;
+  openMap();
+}
+
+// Surcharge confirmMap pour le mode édition
+const _confirmMapOrig=window.confirmMap;
+function confirmMap(){
+  if(window._editMapMode){
+    window._editMapMode=false;
+    if(pickedCoords){
+      editCoords={...pickedCoords};
+      editLocName=pickedCoords.lat.toFixed(4)+', '+pickedCoords.lon.toFixed(4);
+    }
+    closeMap();
+    // Rouvre le modal d'édition
+    const locBtn=document.getElementById('edit-loc-btn');
+    const locLabel=document.getElementById('edit-loc-label');
+    if(editCoords){locBtn.classList.add('has-loc');locLabel.textContent='📍 '+editLocName;}
+    document.getElementById('edit-modal').classList.remove('hidden');
+    return;
+  }
+  // Comportement normal
+  if(!pickedCoords) return;
+  newTaskCoords=pickedCoords;
+  newTaskLocName=pickedCoords.lat.toFixed(4)+', '+pickedCoords.lon.toFixed(4);
+  closeMap();render();
+}
+
+async function saveEdit(){
+  if(!editingId) return;
+  const t=tasks.find(x=>x.id===editingId);
+  if(!t) return;
+  const txt=document.getElementById('edit-text').value.trim();
+  if(!txt) return;
+  t.text=txt;
+  t.cat=document.getElementById('edit-cat').value;
+  t.moment=document.getElementById('edit-moment').value;
+  t.coords=editCoords;
+  t.locName=editLocName||'';
+  closeEdit();
+  await updateTaskDB(t);
+  render();
+}
+
 function render(){renderFocus();renderBacklog();renderMoments();}
 loadData();
 </script>

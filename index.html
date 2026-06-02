@@ -9,7 +9,10 @@
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F5F5F7;color:#1D1D1F;min-height:100vh}
 #app{max-width:680px;margin:0 auto;padding:1.5rem 1rem}
 .top-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
-.app-title{font-size:20px;font-weight:600}
+.app-title{font-size:20px;font-weight:600;display:flex;align-items:center;gap:8px}
+.sync-badge{font-size:11px;padding:3px 9px;border-radius:999px;background:#E8F9EE;color:#1A5C2E;border:1px solid #30D158}
+.sync-badge.loading{background:#FEF3E2;color:#7A4D0A;border-color:#FAD67A}
+.sync-badge.error{background:#FDEAEA;color:#8B1F1F;border-color:#F5C0C0}
 .save-badge{font-size:11px;color:#86868B}
 .tabs{display:flex;gap:4px;margin-bottom:1.25rem;background:#E8E8ED;border-radius:10px;padding:4px}
 .tab{flex:1;padding:8px;border:none;background:none;border-radius:7px;font-size:13px;cursor:pointer;color:#86868B;font-family:inherit;transition:all .15s}
@@ -58,60 +61,34 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .btn-map.selected{background:#E8F9EE;border-color:#30D158;color:#1A5C2E}
 .btn-add{border:1px solid #007AFF;border-radius:8px;padding:8px 16px;font-size:14px;color:#007AFF;background:#E8F0FF;cursor:pointer;font-weight:500;font-family:inherit;margin-left:auto}
 .btn-add:hover{background:#CCE0FF}
-
-/* ── Modal carte ── */
 .map-modal{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;display:flex;align-items:flex-end;justify-content:center}
 .map-modal.hidden{display:none}
 .map-sheet{background:#fff;border-radius:24px 24px 0 0;width:100%;max-width:680px;overflow:hidden;display:flex;flex-direction:column;max-height:94vh;box-shadow:0 -8px 40px rgba(0,0,0,.15)}
-
-/* Header modal */
 .map-header{padding:16px 16px 0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.map-header-left{display:flex;flex-direction:column}
 .map-title{font-size:16px;font-weight:600;color:#1D1D1F}
 .map-hint{font-size:12px;color:#86868B;margin-top:2px}
 .btn-close-map{width:32px;height:32px;border-radius:50%;border:none;background:#F2F2F7;cursor:pointer;font-size:15px;color:#86868B;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:inherit}
-.btn-close-map:hover{background:#E5E5EA}
-
-/* Barre de recherche dans le modal */
 .map-search-row{padding:12px 16px 10px;flex-shrink:0;display:flex;gap:8px}
-.map-search-inp{flex:1;border:1px solid #E5E5EA;border-radius:10px;padding:10px 14px;font-size:14px;background:#F9F9FB;font-family:inherit;outline:none;transition:all .15s}
+.map-search-inp{flex:1;border:1px solid #E5E5EA;border-radius:10px;padding:10px 14px;font-size:14px;background:#F9F9FB;font-family:inherit;outline:none}
 .map-search-inp:focus{border-color:#007AFF;background:#fff}
 .btn-search-map{border:1px solid #007AFF;border-radius:10px;padding:10px 14px;font-size:13px;color:#007AFF;background:#E8F0FF;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0}
-.btn-search-map:hover{background:#CCE0FF}
-
-/* Toolbar carte */
 .map-toolbar{padding:0 16px 10px;display:flex;align-items:center;gap:8px;flex-shrink:0}
 .map-zoom-group{display:flex;border:1px solid #E5E5EA;border-radius:10px;overflow:hidden;background:#fff}
-.btn-zoom{width:38px;height:36px;border:none;background:#fff;cursor:pointer;font-size:18px;font-weight:600;color:#1D1D1F;display:flex;align-items:center;justify-content:center;font-family:inherit;transition:background .15s}
+.btn-zoom{width:38px;height:36px;border:none;background:#fff;cursor:pointer;font-size:18px;font-weight:600;color:#1D1D1F;display:flex;align-items:center;justify-content:center;font-family:inherit}
 .btn-zoom:hover{background:#F2F2F7}
 .btn-zoom:first-child{border-right:1px solid #E5E5EA}
-.btn-gps-center{display:flex;align-items:center;gap:6px;border:1px solid #007AFF;border-radius:10px;padding:0 14px;height:36px;font-size:13px;color:#007AFF;background:#E8F0FF;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s}
-.btn-gps-center:hover{background:#CCE0FF}
+.btn-gps-center{display:flex;align-items:center;gap:6px;border:1px solid #007AFF;border-radius:10px;padding:0 14px;height:36px;font-size:13px;color:#007AFF;background:#E8F0FF;cursor:pointer;font-family:inherit;white-space:nowrap}
 .map-zoom-level{margin-left:auto;font-size:12px;color:#86868B;background:#F2F2F7;padding:5px 10px;border-radius:8px}
-
-/* Canvas */
 #map-canvas{display:block;cursor:crosshair;touch-action:none;width:100%;flex:1;min-height:280px}
-.map-loading-msg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(255,255,255,.9);border-radius:10px;padding:10px 16px;font-size:13px;color:#86868B;pointer-events:none;white-space:nowrap}
-
-/* Canvas wrapper */
 .map-canvas-wrap{flex:1;position:relative;overflow:hidden;border-top:1px solid #F2F2F7;border-bottom:1px solid #F2F2F7}
-
-/* Crosshair central */
-.map-crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;opacity:.3}
-
-/* Footer modal */
 .map-footer{padding:12px 16px;display:flex;gap:10px;align-items:center;flex-shrink:0}
 .map-picked-wrap{flex:1;min-width:0}
 .map-picked-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#86868B;margin-bottom:2px}
 .map-picked-val{font-size:13px;color:#1D1D1F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .map-picked-val.empty{color:#C7C7CC}
-.btn-confirm-map{border:none;border-radius:10px;padding:10px 20px;font-size:14px;font-weight:600;background:#007AFF;color:#fff;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;transition:all .15s}
-.btn-confirm-map:hover{background:#0062CC}
+.btn-confirm-map{border:none;border-radius:10px;padding:10px 20px;font-size:14px;font-weight:600;background:#007AFF;color:#fff;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0}
 .btn-confirm-map:disabled{background:#C7C7CC;cursor:default}
-.btn-mypos{border:1px solid #E5E5EA;border-radius:10px;padding:10px 14px;font-size:13px;color:#1D1D1F;background:#fff;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;display:flex;align-items:center;gap:6px;transition:all .15s}
-.btn-mypos:hover{background:#F2F2F7;border-color:#C7C7CC}
-
-/* Pills */
+.btn-mypos{border:1px solid #E5E5EA;border-radius:10px;padding:10px 14px;font-size:13px;color:#1D1D1F;background:#fff;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;display:flex;align-items:center;gap:6px}
 .cpill{font-size:11px;padding:3px 9px;border-radius:999px;flex-shrink:0;font-weight:500}
 .cat-perso{background:#EDEDF8;color:#4A3F8C}
 .cat-travail{background:#FEF3E2;color:#7A4D0A}
@@ -152,28 +129,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </head>
 <body>
 
-<!-- Modal carte -->
 <div class="map-modal hidden" id="map-modal">
   <div class="map-sheet">
     <div class="map-header">
-      <div class="map-header-left">
+      <div>
         <div class="map-title">📍 Choisir un lieu</div>
-        <div class="map-hint">Navigue sur la carte et tape pour épingler</div>
+        <div class="map-hint">Navigue et appuie pour épingler</div>
       </div>
       <button class="btn-close-map" onclick="closeMap()">✕</button>
     </div>
-
-    <!-- Recherche textuelle -->
     <div class="map-search-row">
       <input class="map-search-inp" id="map-search-inp" placeholder="Rechercher un lieu..." onkeydown="if(event.key==='Enter')mapSearch()"/>
       <button class="btn-search-map" onclick="mapSearch()">Chercher</button>
     </div>
-
-    <!-- Toolbar zoom + ma position -->
     <div class="map-toolbar">
       <div class="map-zoom-group">
-        <button class="btn-zoom" onclick="mapZoom(1)" title="Zoom +">+</button>
-        <button class="btn-zoom" onclick="mapZoom(-1)" title="Zoom -">−</button>
+        <button class="btn-zoom" onclick="mapZoom(1)">+</button>
+        <button class="btn-zoom" onclick="mapZoom(-1)">−</button>
       </div>
       <button class="btn-gps-center" onclick="mapCenterGPS()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
@@ -181,16 +153,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       </button>
       <span class="map-zoom-level" id="map-zoom-label">Zoom 12</span>
     </div>
-
-    <!-- Canvas carte -->
     <div class="map-canvas-wrap">
       <canvas id="map-canvas"></canvas>
-      <div id="map-loading" style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.92);border-radius:20px;padding:6px 14px;font-size:12px;color:#86868B;box-shadow:0 2px 8px rgba(0,0,0,.12);pointer-events:none;white-space:nowrap">
-        Chargement de la carte...
-      </div>
+      <div id="map-loading" style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.92);border-radius:20px;padding:6px 14px;font-size:12px;color:#86868B;box-shadow:0 2px 8px rgba(0,0,0,.12);pointer-events:none;white-space:nowrap">Chargement de la carte...</div>
     </div>
-
-    <!-- Footer confirmation -->
     <div class="map-footer">
       <button class="btn-mypos" onclick="useCurrentPos()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#007AFF" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
@@ -207,8 +173,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <div id="app">
   <div class="top-row">
-    <span class="app-title">Mes tâches</span>
-    <span class="save-badge" id="save-txt">Chargement...</span>
+    <div class="app-title">
+      Mes tâches
+      <span class="sync-badge loading" id="sync-badge">Connexion...</span>
+    </div>
+    <span class="save-badge" id="save-txt"></span>
   </div>
   <div class="tabs">
     <button class="tab active" onclick="showTab('focus')">Focus</button>
@@ -221,35 +190,132 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </div>
 
 <script>
+// ── Supabase config ───────────────────────────────────────────
+const SUPA_URL='https://ihmrstjcccnjueygoqms.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlobXJzdGpjY2NuanVleWdvcW1zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0MDY2NDgsImV4cCI6MjA5NTk4MjY0OH0.ptvMGYlUJwiyG_-aeYpgtXt19OnNsOauNYQQowHaYbU';
+const H={'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Prefer':'return=representation'};
+
+async function dbFetch(path,opts={}){
+  const res=await fetch(SUPA_URL+'/rest/v1/'+path,{headers:H,...opts});
+  if(!res.ok) throw new Error(await res.text());
+  return res.status===204?null:res.json();
+}
+
+// ── App state ─────────────────────────────────────────────────
 const MAX=10, RADIUS=500, TILE=256;
 const MOMENTS=['matin','apresmidi','soir'];
 const ML={matin:'Matin',apresmidi:'Après-midi',soir:'Soir'};
 const MI={matin:{bg:'#FEF3E2',icon:'🌅'},apresmidi:{bg:'#E8F0FF',icon:'☀️'},soir:{bg:'#EDEDF8',icon:'🌙'}};
-
-let tasks=[], nextId=1, saveTimer=null;
+let tasks=[], syncing=false;
 let gpsActive=false, gpsWatcher=null, userPos=null, currentPlaceName=null;
 let notifiedIds=new Set();
 let newTaskCoords=null, newTaskLocName=null;
 
-// ── Carte ─────────────────────────────────────────────────────
+function setSyncBadge(state,txt){
+  const el=document.getElementById('sync-badge');
+  if(!el)return;
+  el.textContent=txt;
+  el.className='sync-badge'+(state==='ok'?'':state==='loading'?' loading':' error');
+}
+function setSave(t){const el=document.getElementById('save-txt');if(el)el.textContent=t;}
+
+// ── Supabase CRUD ─────────────────────────────────────────────
+function toRow(t){
+  return{text:t.text,cat:t.cat,moment:t.moment,loc_name:t.locName||'',
+    coords:t.coords?JSON.stringify(t.coords):null,
+    in_focus:t.inFocus,done:t.done};
+}
+function fromRow(r){
+  return{id:r.id,text:r.text,cat:r.cat||'autre',moment:r.moment||'matin',
+    locName:r.loc_name||'',
+    coords:r.coords?(typeof r.coords==='string'?JSON.parse(r.coords):r.coords):null,
+    inFocus:r.in_focus,done:r.done,nearby:false,dist:null};
+}
+
+async function loadData(){
+  setSyncBadge('loading','Chargement...');
+  try{
+    const rows=await dbFetch('tasks?order=id.asc');
+    tasks=rows.map(fromRow);
+    setSyncBadge('ok','✓ Synchronisé');
+    render();
+    subscribeRealtime();
+  }catch(e){
+    setSyncBadge('error','Erreur DB');
+    console.error(e);
+    // Fallback localStorage
+    try{
+      const raw=localStorage.getItem('todo_gps_v5')||localStorage.getItem('todo_gps_v4')||localStorage.getItem('todo_gps_v3');
+      if(raw){const d=JSON.parse(raw);tasks=d.tasks||[];}
+    }catch(e2){}
+    render();
+  }
+}
+
+async function addTaskDB(t){
+  setSave('Sauvegarde...');
+  try{
+    const rows=await dbFetch('tasks',{method:'POST',body:JSON.stringify(toRow(t))});
+    const newId=rows[0].id;
+    // Remplacer l'id temporaire par l'id réel
+    const idx=tasks.findIndex(x=>x.id===t.id);
+    if(idx>=0) tasks[idx].id=newId;
+    setSave('');
+    render();
+  }catch(e){setSyncBadge('error','Erreur sauvegarde');console.error(e);}
+}
+
+async function updateTaskDB(t){
+  setSave('...');
+  try{
+    await dbFetch(`tasks?id=eq.${t.id}`,{method:'PATCH',body:JSON.stringify(toRow(t))});
+    setSave('');
+  }catch(e){setSyncBadge('error','Erreur mise à jour');console.error(e);}
+}
+
+async function deleteTaskDB(id){
+  setSave('...');
+  try{
+    await dbFetch(`tasks?id=eq.${id}`,{method:'DELETE'});
+    setSave('');
+  }catch(e){setSyncBadge('error','Erreur suppression');console.error(e);}
+}
+
+// ── Realtime ──────────────────────────────────────────────────
+function subscribeRealtime(){
+  // Polling toutes les 5s comme fallback (les websockets Supabase nécessitent la lib JS)
+  setInterval(async()=>{
+    try{
+      const rows=await dbFetch('tasks?order=id.asc');
+      const newTasks=rows.map(fromRow);
+      // Préserver nearby/dist calculés localement
+      newTasks.forEach(t=>{
+        const existing=tasks.find(x=>x.id===t.id);
+        if(existing){t.nearby=existing.nearby;t.dist=existing.dist;}
+      });
+      tasks=newTasks;
+      setSyncBadge('ok','✓ Synchronisé');
+      render();
+    }catch(e){}
+  },5000);
+}
+
+// ── Carte canvas ──────────────────────────────────────────────
 let mv={lat:25.2048,lon:55.2708,zoom:12};
-let canvas, ctx, tileCache={}, pickedCoords=null;
-let drag=null, pinchDist0=null, isDragging=false;
-let tilesLoaded=0, tilesTotal=0;
+let canvas,ctx,tileCache={},pickedCoords=null;
+let drag=null,pinchDist0=null,isDragging=false;
 
 function lon2x(lon,z){return(lon+180)/360*Math.pow(2,z);}
 function lat2y(lat,z){return(1-Math.log(Math.tan(lat*Math.PI/180)+1/Math.cos(lat*Math.PI/180))/Math.PI)/2*Math.pow(2,z);}
 function x2lon(x,z){return x/Math.pow(2,z)*360-180;}
 function y2lat(y,z){return Math.atan(Math.sinh(Math.PI*(1-2*y/Math.pow(2,z))))*180/Math.PI;}
-
 function ll2px(lat,lon){
-  const n=Math.pow(2,mv.zoom);
-  const cx=canvas.width/2, cy=canvas.height/2;
+  const cx=canvas.width/2,cy=canvas.height/2;
   return{x:cx+(lon2x(lon,mv.zoom)-lon2x(mv.lon,mv.zoom))*TILE,
          y:cy+(lat2y(lat,mv.zoom)-lat2y(mv.lat,mv.zoom))*TILE};
 }
 function px2ll(px,py){
-  const cx=canvas.width/2, cy=canvas.height/2;
+  const cx=canvas.width/2,cy=canvas.height/2;
   return{lat:y2lat(lat2y(mv.lat,mv.zoom)+(py-cy)/TILE,mv.zoom),
          lon:x2lon(lon2x(mv.lon,mv.zoom)+(px-cx)/TILE,mv.zoom)};
 }
@@ -258,210 +324,126 @@ function getTile(tx,ty,z){
   const key=`${z}/${tx}/${ty}`;
   if(tileCache[key]) return tileCache[key];
   const img=new Image(); img.crossOrigin='anonymous';
-  // Essai avec plusieurs serveurs OSM
-  const servers=['a','b','c'];
-  const s=servers[(tx+ty)%3];
+  const s=['a','b','c'][(tx+ty)%3];
   img.src=`https://${s}.tile.openstreetmap.org/${z}/${tx}/${ty}.png`;
-  tilesTotal++;
-  img.onload=()=>{tileCache[key]=img; tilesLoaded++; drawMap();};
+  img.onload=()=>{tileCache[key]=img;drawMap();};
   img.onerror=()=>{
-    // Fallback CARTO
     const img2=new Image(); img2.crossOrigin='anonymous';
     img2.src=`https://a.basemaps.cartocdn.com/rastertiles/voyager_labels_under/${z}/${tx}/${ty}.png`;
-    img2.onload=()=>{tileCache[key]=img2; tilesLoaded++; drawMap();};
-    img2.onerror=()=>{tileCache[key]='err'; drawMap();};
+    img2.onload=()=>{tileCache[key]=img2;drawMap();};
+    img2.onerror=()=>{tileCache[key]='err';drawMap();};
   };
-  tileCache[key]=null;
-  return null;
+  tileCache[key]=null; return null;
 }
 
 function drawMap(){
   if(!canvas||!ctx) return;
-  const W=canvas.width, H=canvas.height;
+  const W=canvas.width,H=canvas.height;
   const z=Math.round(Math.max(1,Math.min(19,mv.zoom)));
   const n=Math.pow(2,z);
-
   ctx.clearRect(0,0,W,H);
   ctx.fillStyle='#E8EAE8'; ctx.fillRect(0,0,W,H);
-
-  const cx=W/2, cy=H/2;
-  const cx_t=lon2x(mv.lon,z), cy_t=lat2y(mv.lat,z);
-  const x0=Math.floor(cx_t-cx/TILE)-1, y0=Math.floor(cy_t-cy/TILE)-1;
-  const x1=Math.floor(cx_t+cx/TILE)+1, y1=Math.floor(cy_t+cy/TILE)+1;
-
+  const cx=W/2,cy=H/2;
+  const cxt=lon2x(mv.lon,z),cyt=lat2y(mv.lat,z);
   let pending=0;
-  for(let tx=x0;tx<=x1;tx++){
-    for(let ty=y0;ty<=y1;ty++){
+  for(let tx=Math.floor(cxt-cx/TILE)-1;tx<=Math.floor(cxt+cx/TILE)+1;tx++){
+    for(let ty=Math.floor(cyt-cy/TILE)-1;ty<=Math.floor(cyt+cy/TILE)+1;ty++){
       if(ty<0||ty>=n) continue;
-      const px=Math.round(cx+(tx-cx_t)*TILE);
-      const py=Math.round(cy+(ty-cy_t)*TILE);
-      const img=getTile((tx%n+n)%n, ty, z);
-      if(img&&img!=='err'&&img.complete&&img.naturalWidth>0){
-        ctx.drawImage(img,px,py,TILE,TILE);
-      } else {
-        ctx.fillStyle='#DDE0DC'; ctx.fillRect(px,py,TILE,TILE);
-        ctx.strokeStyle='#C8CBC7'; ctx.lineWidth=.5; ctx.strokeRect(px,py,TILE,TILE);
-        if(!img) pending++;
-      }
+      const px=Math.round(cx+(tx-cxt)*TILE), py=Math.round(cy+(ty-cyt)*TILE);
+      const img=getTile((tx%n+n)%n,ty,z);
+      if(img&&img!=='err'&&img.complete&&img.naturalWidth>0) ctx.drawImage(img,px,py,TILE,TILE);
+      else{ctx.fillStyle='#DDE0DC';ctx.fillRect(px,py,TILE,TILE);if(!img)pending++;}
     }
   }
-
-  // Loading indicator
   const loadEl=document.getElementById('map-loading');
   if(loadEl) loadEl.style.display=pending>0?'block':'none';
-
-  // Position GPS (point bleu)
   if(userPos){
     const p=ll2px(userPos.lat,userPos.lon);
-    ctx.beginPath(); ctx.arc(p.x,p.y,14,0,Math.PI*2);
-    ctx.fillStyle='rgba(0,122,255,.15)'; ctx.fill();
-    ctx.beginPath(); ctx.arc(p.x,p.y,7,0,Math.PI*2);
-    ctx.fillStyle='#007AFF'; ctx.fill();
-    ctx.strokeStyle='#fff'; ctx.lineWidth=2.5; ctx.stroke();
+    ctx.beginPath();ctx.arc(p.x,p.y,14,0,Math.PI*2);ctx.fillStyle='rgba(0,122,255,.15)';ctx.fill();
+    ctx.beginPath();ctx.arc(p.x,p.y,7,0,Math.PI*2);ctx.fillStyle='#007AFF';ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=2.5;ctx.stroke();
   }
-
-  // Pin épinglé
-  if(pickedCoords){
-    const p=ll2px(pickedCoords.lat,pickedCoords.lon);
-    drawPin(p.x,p.y,'#007AFF');
-  }
-
-  // Pins des tâches avec lieu
   tasks.filter(t=>t.coords&&!t.done).forEach(t=>{
     const p=ll2px(t.coords.lat,t.coords.lon);
     if(p.x>-20&&p.x<W+20&&p.y>-40&&p.y<H+20){
       drawPin(p.x,p.y,t.nearby?'#30D158':'#FF9F0A');
-      // Étiquette
-      ctx.fillStyle='rgba(0,0,0,.7)';
-      const label=t.text.substring(0,18)+(t.text.length>18?'…':'');
+      const label=t.text.substring(0,16)+(t.text.length>16?'…':'');
       const tw=ctx.measureText(label).width+16;
-      ctx.beginPath(); roundRect(ctx,p.x-tw/2,p.y-52,tw,20,6); ctx.fill();
-      ctx.fillStyle='#fff'; ctx.font='11px -apple-system,sans-serif';
-      ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText(label,p.x,p.y-42);
+      ctx.fillStyle='rgba(0,0,0,.72)';
+      ctx.beginPath();
+      const lx=p.x-tw/2,ly=p.y-52;
+      ctx.moveTo(lx+6,ly);ctx.lineTo(lx+tw-6,ly);ctx.quadraticCurveTo(lx+tw,ly,lx+tw,ly+6);
+      ctx.lineTo(lx+tw,ly+14);ctx.quadraticCurveTo(lx+tw,ly+20,lx+tw-6,ly+20);
+      ctx.lineTo(lx+6,ly+20);ctx.quadraticCurveTo(lx,ly+20,lx,ly+14);
+      ctx.lineTo(lx,ly+6);ctx.quadraticCurveTo(lx,ly,lx+6,ly);ctx.closePath();ctx.fill();
+      ctx.fillStyle='#fff';ctx.font='11px -apple-system,sans-serif';
+      ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,p.x,p.y-42);
     }
   });
-
-  // Attribution
-  ctx.fillStyle='rgba(255,255,255,.8)';
-  ctx.fillRect(0,H-18,220,18);
-  ctx.fillStyle='#666'; ctx.font='10px sans-serif';
-  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  if(pickedCoords){const p=ll2px(pickedCoords.lat,pickedCoords.lon);drawPin(p.x,p.y,'#007AFF');}
+  ctx.fillStyle='rgba(255,255,255,.8)';ctx.fillRect(0,H-18,220,18);
+  ctx.fillStyle='#666';ctx.font='10px sans-serif';ctx.textAlign='left';ctx.textBaseline='alphabetic';
   ctx.fillText('© OpenStreetMap contributors',4,H-4);
-
-  // Zoom label
   const zl=document.getElementById('map-zoom-label');
   if(zl) zl.textContent=`Zoom ${z}`;
 }
 
 function drawPin(x,y,color){
-  // Ombre
-  ctx.beginPath(); ctx.arc(x,y+2,10,0,Math.PI*2);
-  ctx.fillStyle='rgba(0,0,0,.15)'; ctx.fill();
-  // Corps du pin
-  ctx.beginPath();
-  ctx.arc(x,y-14,10,0,Math.PI*2);
-  ctx.fillStyle=color; ctx.fill();
-  ctx.strokeStyle='#fff'; ctx.lineWidth=2.5; ctx.stroke();
-  // Pointe
-  ctx.beginPath();
-  ctx.moveTo(x-5,y-8); ctx.lineTo(x,y+2); ctx.lineTo(x+5,y-8);
-  ctx.fillStyle=color; ctx.fill();
-  // Point blanc central
-  ctx.beginPath(); ctx.arc(x,y-14,4,0,Math.PI*2);
-  ctx.fillStyle='rgba(255,255,255,.9)'; ctx.fill();
-}
-
-function roundRect(ctx,x,y,w,h,r){
-  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
-  ctx.quadraticCurveTo(x+w,y,x+w,y+r);
-  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
-  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
-  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
-  ctx.closePath();
+  ctx.beginPath();ctx.arc(x,y+2,10,0,Math.PI*2);ctx.fillStyle='rgba(0,0,0,.15)';ctx.fill();
+  ctx.beginPath();ctx.arc(x,y-14,10,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();
+  ctx.strokeStyle='#fff';ctx.lineWidth=2.5;ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x-5,y-8);ctx.lineTo(x,y+2);ctx.lineTo(x+5,y-8);
+  ctx.fillStyle=color;ctx.fill();
+  ctx.beginPath();ctx.arc(x,y-14,4,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,.9)';ctx.fill();
 }
 
 function initMap(){
   canvas=document.getElementById('map-canvas');
   if(!canvas) return;
   ctx=canvas.getContext('2d');
-  const wrap=canvas.parentElement;
-  canvas.width=wrap.clientWidth||360;
+  canvas.width=canvas.parentElement.clientWidth||360;
   canvas.height=Math.min(window.innerHeight*.48,340);
   tileCache={};
-
-  // Clic / tap
   canvas.addEventListener('click',e=>{
     if(isDragging) return;
     const r=canvas.getBoundingClientRect();
-    const p=px2ll(e.clientX-r.left, e.clientY-r.top);
+    const p=px2ll(e.clientX-r.left,e.clientY-r.top);
     setPicked(p.lat,p.lon);
   });
-
-  // Drag souris
   canvas.addEventListener('mousedown',e=>{drag={x:e.clientX,y:e.clientY,lat:mv.lat,lon:mv.lon};isDragging=false;});
   canvas.addEventListener('mousemove',e=>{
     if(!drag) return;
-    const dx=e.clientX-drag.x, dy=e.clientY-drag.y;
+    const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
     if(Math.abs(dx)>4||Math.abs(dy)>4) isDragging=true;
-    if(isDragging){
-      const z=mv.zoom;
-      mv.lat=y2lat(lat2y(drag.lat,z)-dy/TILE,z);
-      mv.lon=x2lon(lon2x(drag.lon,z)-dx/TILE,z);
-      drawMap();
-    }
+    if(isDragging){mv.lat=y2lat(lat2y(drag.lat,mv.zoom)-dy/TILE,mv.zoom);mv.lon=x2lon(lon2x(drag.lon,mv.zoom)-dx/TILE,mv.zoom);drawMap();}
   });
-  canvas.addEventListener('mouseup',()=>{drag=null; setTimeout(()=>isDragging=false,10);});
+  canvas.addEventListener('mouseup',()=>{drag=null;setTimeout(()=>isDragging=false,10);});
   canvas.addEventListener('mouseleave',()=>drag=null);
-
-  // Touch
   canvas.addEventListener('touchstart',e=>{
-    if(e.touches.length===1){
-      isDragging=false;
-      drag={x:e.touches[0].clientX,y:e.touches[0].clientY,lat:mv.lat,lon:mv.lon};
-    } else if(e.touches.length===2){
-      pinchDist0=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
-    }
+    if(e.touches.length===1){isDragging=false;drag={x:e.touches[0].clientX,y:e.touches[0].clientY,lat:mv.lat,lon:mv.lon};}
+    else if(e.touches.length===2) pinchDist0=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
     e.preventDefault();
   },{passive:false});
-
   canvas.addEventListener('touchmove',e=>{
     if(e.touches.length===1&&drag){
-      const dx=e.touches[0].clientX-drag.x, dy=e.touches[0].clientY-drag.y;
+      const dx=e.touches[0].clientX-drag.x,dy=e.touches[0].clientY-drag.y;
       if(Math.abs(dx)>4||Math.abs(dy)>4) isDragging=true;
-      if(isDragging){
-        const z=mv.zoom;
-        mv.lat=y2lat(lat2y(drag.lat,z)-dy/TILE,z);
-        mv.lon=x2lon(lon2x(drag.lon,z)-dx/TILE,z);
-        drawMap();
-      }
+      if(isDragging){mv.lat=y2lat(lat2y(drag.lat,mv.zoom)-dy/TILE,mv.zoom);mv.lon=x2lon(lon2x(drag.lon,mv.zoom)-dx/TILE,mv.zoom);drawMap();}
     } else if(e.touches.length===2&&pinchDist0){
       const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
-      const delta=d-pinchDist0;
-      if(Math.abs(delta)>8){
-        mv.zoom=Math.max(2,Math.min(19,mv.zoom+(delta>0?.5:-.5)));
-        pinchDist0=d; tileCache={}; drawMap();
-      }
+      if(Math.abs(d-pinchDist0)>8){mv.zoom=Math.max(2,Math.min(19,mv.zoom+(d>pinchDist0?.5:-.5)));pinchDist0=d;tileCache={};drawMap();}
     }
     e.preventDefault();
   },{passive:false});
-
   canvas.addEventListener('touchend',e=>{
     if(e.changedTouches.length===1&&!isDragging&&drag){
       const r=canvas.getBoundingClientRect();
-      const p=px2ll(e.changedTouches[0].clientX-r.left, e.changedTouches[0].clientY-r.top);
+      const p=px2ll(e.changedTouches[0].clientX-r.left,e.changedTouches[0].clientY-r.top);
       setPicked(p.lat,p.lon);
     }
-    drag=null; pinchDist0=null; setTimeout(()=>isDragging=false,10);
+    drag=null;pinchDist0=null;setTimeout(()=>isDragging=false,10);
   });
-
-  // Scroll zoom
-  canvas.addEventListener('wheel',e=>{
-    e.preventDefault();
-    mv.zoom=Math.max(2,Math.min(19,mv.zoom+(e.deltaY<0?.5:-.5)));
-    tileCache={}; drawMap();
-  },{passive:false});
-
+  canvas.addEventListener('wheel',e=>{e.preventDefault();mv.zoom=Math.max(2,Math.min(19,mv.zoom+(e.deltaY<0?.5:-.5)));tileCache={};drawMap();},{passive:false});
   drawMap();
 }
 
@@ -473,40 +455,29 @@ function setPicked(lat,lon){
   document.getElementById('btn-confirm-map').disabled=false;
   drawMap();
 }
-
 function mapZoom(d){mv.zoom=Math.max(2,Math.min(19,mv.zoom+d));tileCache={};drawMap();}
-
 function mapCenterGPS(){
   if(userPos){mv.lat=userPos.lat;mv.lon=userPos.lon;mv.zoom=16;tileCache={};drawMap();}
-  else{
-    navigator.geolocation.getCurrentPosition(p=>{
-      mv.lat=p.coords.latitude;mv.lon=p.coords.longitude;mv.zoom=16;tileCache={};drawMap();
-    },()=>alert('GPS non disponible.'),{enableHighAccuracy:true,timeout:8000});
-  }
+  else navigator.geolocation.getCurrentPosition(p=>{mv.lat=p.coords.latitude;mv.lon=p.coords.longitude;mv.zoom=16;tileCache={};drawMap();},()=>alert('GPS non disponible.'),{enableHighAccuracy:true,timeout:8000});
 }
-
 async function mapSearch(){
   const q=document.getElementById('map-search-inp').value.trim();
   if(!q) return;
   try{
-    const url=`https://photon.komoot.io/api/?q=${encodeURIComponent(q+' Dubai')}&limit=1&lang=fr`;
-    const res=await fetch(url);
+    const res=await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q+' Dubai')}&limit=1&lang=fr`);
     const data=await res.json();
     if(data.features&&data.features[0]){
       const f=data.features[0];
-      const lat=f.geometry.coordinates[1], lon=f.geometry.coordinates[0];
-      mv.lat=lat; mv.lon=lon; mv.zoom=16;
-      tileCache={}; setPicked(lat,lon); drawMap();
-    } else alert('Lieu introuvable — essaie un autre nom.');
+      mv.lat=f.geometry.coordinates[1];mv.lon=f.geometry.coordinates[0];mv.zoom=16;
+      tileCache={};setPicked(mv.lat,mv.lon);drawMap();
+    } else alert('Lieu introuvable.');
   }catch(e){alert('Erreur réseau.');}
 }
-
 function useCurrentPos(){
   const go=(lat,lon)=>{mv.lat=lat;mv.lon=lon;mv.zoom=16;tileCache={};setPicked(lat,lon);drawMap();};
   if(userPos) go(userPos.lat,userPos.lon);
   else navigator.geolocation.getCurrentPosition(p=>go(p.coords.latitude,p.coords.longitude),()=>alert('GPS non disponible.'),{enableHighAccuracy:true,timeout:8000});
 }
-
 function openMap(){
   document.getElementById('map-modal').classList.remove('hidden');
   pickedCoords=null;
@@ -522,15 +493,11 @@ function confirmMap(){
   if(!pickedCoords) return;
   newTaskCoords=pickedCoords;
   newTaskLocName=`${pickedCoords.lat.toFixed(4)}, ${pickedCoords.lon.toFixed(4)}`;
-  closeMap(); render();
+  closeMap();render();
 }
 
 // ── GPS ───────────────────────────────────────────────────────
-function haversine(lat1,lon1,lat2,lon2){
-  const R=6371000,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;
-  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-}
+function haversine(a,b,c,d){const R=6371000,dLat=(c-a)*Math.PI/180,dLon=(d-b)*Math.PI/180;const x=Math.sin(dLat/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
 function fmtDist(d){if(d===null||d===undefined)return'';return d<1000?`${d}m`:`${(d/1000).toFixed(1)}km`;}
 
 async function startGPS(){
@@ -545,20 +512,16 @@ async function startGPS(){
       setGPSUI('active',`GPS actif · précision ${Math.round(pos.coords.accuracy)}m`);
       checkProximity();
     },
-    err=>{
-      const m={1:'Accès refusé.',2:'Position indisponible.',3:'Délai dépassé.'};
-      setGPSUI('error',m[err.code]||'Erreur GPS');
-      gpsActive=false; render();
-    },
+    err=>{const m={1:'Accès refusé.',2:'Position indisponible.',3:'Délai dépassé.'};setGPSUI('error',m[err.code]||'Erreur GPS');gpsActive=false;render();},
     {enableHighAccuracy:true,maximumAge:10000,timeout:15000}
   );
-  gpsActive=true; render();
+  gpsActive=true;render();
 }
 function stopGPS(){
   if(gpsWatcher!==null) navigator.geolocation.clearWatch(gpsWatcher);
-  gpsWatcher=null; gpsActive=false; userPos=null; currentPlaceName=null;
+  gpsWatcher=null;gpsActive=false;userPos=null;currentPlaceName=null;
   tasks.forEach(t=>{t.nearby=false;t.dist=null;});
-  setGPSUI('off','GPS désactivé'); render();
+  setGPSUI('off','GPS désactivé');render();
 }
 function toggleGPS(){gpsActive?stopGPS():startGPS();}
 function setGPSUI(s,msg){window._gpsState={state:s,msg};render();}
@@ -568,61 +531,31 @@ function checkProximity(){
   let changed=false;
   tasks.filter(t=>t.coords&&!t.done).forEach(t=>{
     const d=Math.round(haversine(userPos.lat,userPos.lon,t.coords.lat,t.coords.lon));
-    t.dist=d; const was=t.nearby; t.nearby=d<=RADIUS;
+    t.dist=d;const was=t.nearby;t.nearby=d<=RADIUS;
     if(t.nearby&&!was&&!notifiedIds.has(t.id)){
       notifiedIds.add(t.id);
-      if('Notification' in window&&Notification.permission==='granted'){
+      if('Notification' in window&&Notification.permission==='granted')
         new Notification('📍 Tâche à proximité !',{body:`"${t.text}" à ${fmtDist(d)} de toi.`});
-      }
     }
     if(!t.nearby) notifiedIds.delete(t.id);
     changed=true;
   });
   tasks.filter(t=>!t.coords||t.done).forEach(t=>{t.nearby=false;t.dist=null;});
-  if(changed){scheduleSave();render();}
+  if(changed) render();
 }
 
 async function simulateNearby(){
   const t=tasks.find(x=>x.coords&&!x.done);
-  if(!t){alert('Ajoute d\'abord une tâche avec un lieu épinglé sur la carte.');return;}
+  if(!t){alert('Ajoute d\'abord une tâche avec un lieu épinglé.');return;}
   userPos={lat:t.coords.lat+0.001,lon:t.coords.lon};
-  gpsActive=true; window._gpsState={state:'active',msg:'🧪 Mode test'};
-  currentPlaceName='Position simulée'; notifiedIds=new Set();
+  gpsActive=true;window._gpsState={state:'active',msg:'🧪 Mode test'};
+  currentPlaceName='Position simulée';notifiedIds=new Set();
   checkProximity();
   if('Notification' in window){
-    if(Notification.permission==='granted') new Notification('🧪 Test notifications',{body:'Fonctionne ✅'});
+    if(Notification.permission==='granted') new Notification('🧪 Test',{body:'Notifications OK ✅'});
     else{const p=await Notification.requestPermission();if(p==='granted') new Notification('🧪 Test',{body:'OK ✅'});}
   }
 }
-
-// ── Storage ───────────────────────────────────────────────────
-function loadData(){
-  try{
-    const raw=localStorage.getItem('todo_gps_v5')
-      ||localStorage.getItem('todo_gps_v4')
-      ||localStorage.getItem('todo_gps_v3')
-      ||localStorage.getItem('todo_gps_v2')
-      ||localStorage.getItem('todo_gps_v1');
-    if(raw){const d=JSON.parse(raw);tasks=d.tasks||[];nextId=d.nextId||tasks.length+1;}
-    else{
-      tasks=[
-        {id:1,text:"Faire la demande de Move-in permit",cat:"perso",moment:"matin",locName:"",coords:null,nearby:false,dist:null,inFocus:true,done:false},
-        {id:2,text:"Acheter médicaments",cat:"sante",moment:"apresmidi",locName:"",coords:null,nearby:false,dist:null,inFocus:true,done:false},
-        {id:3,text:"Faire les courses",cat:"courses",moment:"soir",locName:"",coords:null,nearby:false,dist:null,inFocus:false,done:false},
-        {id:4,text:"Appeler assurance",cat:"perso",moment:"matin",locName:"",coords:null,nearby:false,dist:null,inFocus:false,done:false},
-      ];
-      nextId=5;
-    }
-  }catch(e){tasks=[];nextId=1;}
-  setSave('Sauvegardé'); render();
-}
-function saveData(){
-  setSave('Sauvegarde...');
-  try{localStorage.setItem('todo_gps_v5',JSON.stringify({tasks,nextId}));setSave('✓ Sauvegardé');}
-  catch(e){setSave('Erreur');}
-}
-function scheduleSave(){if(saveTimer)clearTimeout(saveTimer);setSave('...');saveTimer=setTimeout(saveData,600);}
-function setSave(t){const el=document.getElementById('save-txt');if(el)el.textContent=t;}
 
 // ── Task ops ──────────────────────────────────────────────────
 function catLabel(c){return{perso:'Perso',travail:'Travail',courses:'Courses',sante:'Santé',autre:'Autre'}[c]||c;}
@@ -631,26 +564,30 @@ function canFocus(){return focusTasks().length<3;}
 function showTab(t){
   document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['focus','backlog','moments'][i]===t));
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('visible'));
-  document.getElementById('tab-'+t).classList.add('visible'); render();
+  document.getElementById('tab-'+t).classList.add('visible');render();
 }
 function toggleDone(id){
   const t=tasks.find(x=>x.id===id);
-  if(t){t.done=!t.done;if(t.done){t.nearby=false;t.dist=null;}scheduleSave();render();}
+  if(t){t.done=!t.done;if(t.done){t.nearby=false;t.dist=null;}updateTaskDB(t);render();}
 }
-function removeFromFocus(id){const t=tasks.find(x=>x.id===id);if(t){t.inFocus=false;scheduleSave();render();}}
-function addToFocus(id){if(!canFocus())return;const t=tasks.find(x=>x.id===id);if(t){t.inFocus=true;scheduleSave();render();}}
-function delTask(id){tasks=tasks.filter(x=>x.id!==id);scheduleSave();render();}
+function removeFromFocus(id){const t=tasks.find(x=>x.id===id);if(t){t.inFocus=false;updateTaskDB(t);render();}}
+function addToFocus(id){if(!canFocus())return;const t=tasks.find(x=>x.id===id);if(t){t.inFocus=true;updateTaskDB(t);render();}}
+function delTask(id){
+  tasks=tasks.filter(x=>x.id!==id);
+  deleteTaskDB(id);render();
+}
 function addTask(){
   if(tasks.length>=MAX) return;
   const inp=document.getElementById('new-task-inp');
-  const txt=inp.value.trim(); if(!txt) return;
-  tasks.push({id:nextId++,text:txt,
+  const txt=inp.value.trim();if(!txt) return;
+  const t={id:Date.now(),text:txt,
     cat:document.getElementById('new-cat-sel').value,
     moment:document.getElementById('new-moment-sel').value,
-    locName:newTaskLocName||'', coords:newTaskCoords||null,
-    nearby:false,dist:null,inFocus:false,done:false});
-  inp.value=''; newTaskCoords=null; newTaskLocName=null;
-  scheduleSave(); render();
+    locName:newTaskLocName||'',coords:newTaskCoords||null,
+    inFocus:false,done:false,nearby:false,dist:null};
+  tasks.push(t);
+  inp.value='';newTaskCoords=null;newTaskLocName=null;
+  addTaskDB(t);render();
   if(userPos) checkProximity();
 }
 
@@ -677,13 +614,12 @@ function nearbyHTML(){
 }
 function taskSub(t){
   if(!t.coords) return'';
-  const name=t.locName||'Lieu épinglé';
-  let s=`<div class="bl-sub">📍 ${name}`;
+  let s=`<div class="bl-sub">📍 ${t.locName||'Lieu épinglé'}`;
   if(t.dist!==null&&gpsActive) s+=` · <span style="color:${t.nearby?'#1A5C2E':'#86868B'};font-weight:${t.nearby?600:400}">${fmtDist(t.dist)}</span>`;
   return s+'</div>';
 }
 function renderFocus(){
-  const ft=focusTasks(), done=ft.filter(t=>t.done).length;
+  const ft=focusTasks(),done=ft.filter(t=>t.done).length;
   let h=gpsBarHTML()+nearbyHTML();
   h+=`<div class="focus-header"><span class="focus-title">Mes 3 priorités du jour</span><span class="focus-sub">${done}/${ft.length} faites</span></div><div class="focus-slots">`;
   for(let i=0;i<3;i++){
@@ -719,7 +655,7 @@ function renderFocus(){
   document.getElementById('tab-focus').innerHTML=h;
 }
 function renderBacklog(){
-  const full=tasks.length>=MAX, warn=tasks.length>=MAX-2&&!full;
+  const full=tasks.length>=MAX,warn=tasks.length>=MAX-2&&!full;
   const pc=full?'cnt-pill cnt-full':warn?'cnt-pill cnt-warn':'cnt-pill';
   let h=`<div class="count-row"><span class="sec-label">Toutes les tâches</span><span class="${pc}">${tasks.length}/${MAX}</span></div>`;
   if(full) h+=`<div class="limit-msg">⚠️ Limite atteinte — supprime une tâche pour en ajouter.</div>`;
@@ -757,7 +693,7 @@ function renderBacklog(){
 function renderMoments(){
   let h='';
   MOMENTS.forEach(m=>{
-    const items=tasks.filter(t=>t.moment===m), done=items.filter(t=>t.done).length;
+    const items=tasks.filter(t=>t.moment===m),done=items.filter(t=>t.done).length;
     h+=`<div class="moment-block"><div class="moment-head"><div class="mico" style="background:${MI[m].bg}">${MI[m].icon}</div><span class="mname">${ML[m]}</span><span class="mcnt">${done}/${items.length}</span></div><div>`;
     if(!items.length) h+=`<div class="empty-m">Aucune tâche</div>`;
     items.forEach(t=>{

@@ -732,20 +732,30 @@ function onFocusDragOver(e,id){
 function onFocusDrop(e,id){
   e.preventDefault();
   if(!focusDragSrcId||focusDragSrcId===id) return;
-  const ft=tasks.filter(t=>t.inFocus&&!t.done);
-  const srcIdx=tasks.findIndex(t=>t.id===focusDragSrcId);
-  const dstIdx=tasks.findIndex(t=>t.id===id);
+  // Réordonner uniquement les tâches focus
+  const focusIds=tasks
+    .filter(t=>t.inFocus&&!t.done)
+    .sort((a,b)=>(a.position||0)-(b.position||0))
+    .map(t=>t.id);
+  const srcIdx=focusIds.indexOf(focusDragSrcId);
+  const dstIdx=focusIds.indexOf(id);
   if(srcIdx<0||dstIdx<0) return;
-  // Échanger les positions dans tasks
-  const srcPos=tasks[srcIdx].position;
-  tasks[srcIdx].position=tasks[dstIdx].position;
-  tasks[dstIdx].position=srcPos;
+  // Déplacer dans le tableau
+  focusIds.splice(srcIdx,1);
+  focusIds.splice(dstIdx,0,focusDragSrcId);
+  // Réassigner les positions de manière propre (0,1,2...)
+  focusIds.forEach((tid,i)=>{
+    const t=tasks.find(x=>x.id===tid);
+    if(t) t.position=i;
+  });
   document.querySelectorAll('.focus-slot').forEach(el=>el.classList.remove('drag-over-focus','dragging-focus'));
   focusDragSrcId=null;
   render();
-  // Sauvegarder
-  updateTaskDB(tasks[srcIdx]);
-  updateTaskDB(tasks[dstIdx]);
+  // Sauvegarder les nouvelles positions
+  focusIds.forEach(tid=>{
+    const t=tasks.find(x=>x.id===tid);
+    if(t) updateTaskDB(t);
+  });
 }
 function onFocusDragEnd(){
   document.querySelectorAll('.focus-slot').forEach(el=>el.classList.remove('drag-over-focus','dragging-focus'));
@@ -792,9 +802,18 @@ function onFocusTouchEnd(e){
   if(slot){
     const dstId=parseInt(slot.dataset.id);
     if(dstId&&dstId!==focusTouchId){
-      const si=tasks.findIndex(t=>t.id===focusTouchId);
-      const di=tasks.findIndex(t=>t.id===dstId);
-      if(si>=0&&di>=0){const sp=tasks[si].position;tasks[si].position=tasks[di].position;tasks[di].position=sp;updateTaskDB(tasks[si]);updateTaskDB(tasks[di]);}
+      const focusIds=tasks
+        .filter(t=>t.inFocus&&!t.done)
+        .sort((a,b)=>(a.position||0)-(b.position||0))
+        .map(t=>t.id);
+      const si=focusIds.indexOf(focusTouchId);
+      const di=focusIds.indexOf(dstId);
+      if(si>=0&&di>=0){
+        focusIds.splice(si,1);
+        focusIds.splice(di,0,focusTouchId);
+        focusIds.forEach((tid,i)=>{const t=tasks.find(x=>x.id===tid);if(t)t.position=i;});
+        focusIds.forEach(tid=>{const t=tasks.find(x=>x.id===tid);if(t)updateTaskDB(t);});
+      }
     }
   }
   focusTouchId=null;

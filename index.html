@@ -152,6 +152,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .filter-chip.active.courses{background:#2C5F0A}
 .filter-chip.active.sante{background:#8B1F1F}
 .filter-chip.active.autre{background:#86868B}
+
+.bl-item{cursor:grab}
+.bl-item:active{cursor:grabbing}
+.bl-item.dragging{opacity:.4;border:1.5px dashed #007AFF;background:#E8F0FF!important}
+.bl-item.drag-over{border-top:2.5px solid #007AFF}
+.drag-handle{color:#C7C7CC;font-size:16px;cursor:grab;padding:0 4px;flex-shrink:0;touch-action:none;user-select:none}
+.drag-handle:hover{color:#86868B}
+
+.focus-slot.drag-over-focus{border-color:#007AFF!important;background:#E8F0FF!important}
+.focus-slot.dragging-focus{opacity:.3}
+.focus-drag-handle{color:#C7C7CC;font-size:18px;cursor:grab;padding:0 4px;flex-shrink:0;touch-action:none;user-select:none;line-height:1}
+.focus-drag-handle:hover{color:#86868B}
 </style>
 </head>
 <body>
@@ -275,6 +287,8 @@ const ML={matin:'Matin',apresmidi:'Après-midi',soir:'Soir'};
 const MI={matin:{bg:'#FEF3E2',icon:'🌅'},apresmidi:{bg:'#E8F0FF',icon:'☀️'},soir:{bg:'#EDEDF8',icon:'🌙'}};
 let tasks=[], syncing=false;
 let activeFilter='all';
+let dragSrcId=null;
+let focusDragSrcId=null;
 let gpsActive=false, gpsWatcher=null, userPos=null, currentPlaceName=null;
 let notifiedIds=new Set();
 let newTaskCoords=null, newTaskLocName=null;
@@ -291,20 +305,20 @@ function setSave(t){const el=document.getElementById('save-txt');if(el)el.textCo
 function toRow(t){
   return{text:t.text,cat:t.cat,moment:t.moment,loc_name:t.locName||'',
     coords:t.coords?JSON.stringify(t.coords):null,
-    in_focus:t.inFocus,done:t.done};
+    in_focus:t.inFocus,done:t.done,position:t.position||0};
 }
 function fromRow(r){
   return{id:r.id,text:r.text,cat:r.cat||'autre',moment:r.moment||'matin',
     locName:r.loc_name||'',
     coords:r.coords?(typeof r.coords==='string'?JSON.parse(r.coords):r.coords):null,
-    inFocus:r.in_focus,done:r.done,nearby:false,dist:null};
+    inFocus:r.in_focus,done:r.done,position:r.position||r.id,nearby:false,dist:null};
 }
 
 async function loadData(){
   setSyncBadge('loading','Chargement...');
   try{
     const rows=await dbFetch('tasks?order=id.asc');
-    tasks=rows.map(fromRow);
+    tasks=rows.map(fromRow).sort((a,b)=>(a.position||0)-(b.position||0));
     setSyncBadge('ok','✓ Synchronisé');
     render();
     subscribeRealtime();
@@ -608,6 +622,187 @@ async function simulateNearby(){
 }
 
 // ── Task ops ──────────────────────────────────────────────────
+
+async function savePositions(){
+  // Met à jour position de toutes les tâches en batch
+  for(let i=0;i<tasks.length;i++){
+    tasks[i].position=i;
+    try{ await dbFetch(`tasks?id=eq.${tasks[i].id}`,{method:'PATCH',body:JSON.stringify({position:i})}); }catch(e){}
+  }
+}
+
+function onDragStart(e,id){
+  dragSrcId=id;
+  e.dataTransfer.effectAllowed='move';
+  setTimeout(()=>{
+    const el=document.querySelector(`.bl-item[data-id="${id}"]`);
+    if(el) el.classList.add('dragging');
+  },0);
+}
+function onDragOver(e,id){
+  e.preventDefault();
+  document.querySelectorAll('.bl-item').forEach(el=>el.classList.remove('drag-over'));
+  const el=document.querySelector(`.bl-item[data-id="${id}"]`);
+  if(el&&id!==dragSrcId) el.classList.add('drag-over');
+}
+function onDrop(e,id){
+  e.preventDefault();
+  if(!dragSrcId||dragSrcId===id) return;
+  const srcIdx=tasks.findIndex(t=>t.id===dragSrcId);
+  const dstIdx=tasks.findIndex(t=>t.id===id);
+  if(srcIdx<0||dstIdx<0) return;
+  const [moved]=tasks.splice(srcIdx,1);
+  tasks.splice(dstIdx,0,moved);
+  document.querySelectorAll('.bl-item').forEach(el=>el.classList.remove('drag-over','dragging'));
+  dragSrcId=null;
+  render();
+  savePositions();
+}
+function onDragEnd(){
+  document.querySelectorAll('.bl-item').forEach(el=>el.classList.remove('drag-over','dragging'));
+  dragSrcId=null;
+}
+
+// Touch drag & drop
+let touchDragId=null, touchClone=null, touchOffX=0, touchOffY=0;
+function onTouchStart(e,id){
+  const touch=e.touches[0];
+  touchDragId=id;
+  touchOffX=touch.clientX; touchOffY=touch.clientY;
+  // Clone visuel
+  const el=e.currentTarget.closest('.bl-item');
+  touchClone=el.cloneNode(true);
+  touchClone.style.cssText=`position:fixed;z-index:9999;width:${el.offsetWidth}px;opacity:.85;pointer-events:none;border:1.5px solid #007AFF;border-radius:10px;background:#E8F0FF;left:${el.getBoundingClientRect().left}px;top:${el.getBoundingClientRect().top}px;`;
+  document.body.appendChild(touchClone);
+  el.style.opacity='.3';
+}
+function onTouchMove(e){
+  if(!touchDragId||!touchClone) return;
+  e.preventDefault();
+  const touch=e.touches[0];
+  touchClone.style.left=(touchClone.getBoundingClientRect().left+(touch.clientX-touchOffX))+'px';
+  touchClone.style.top=(touchClone.getBoundingClientRect().top+(touch.clientY-touchOffY))+'px';
+  touchOffX=touch.clientX; touchOffY=touch.clientY;
+  // Trouver l'élément survolé
+  touchClone.style.display='none';
+  const el=document.elementFromPoint(touch.clientX,touch.clientY);
+  touchClone.style.display='';
+  const item=el&&el.closest('.bl-item');
+  document.querySelectorAll('.bl-item').forEach(x=>x.classList.remove('drag-over'));
+  if(item){const hoverId=parseInt(item.dataset.id);if(hoverId&&hoverId!==touchDragId)item.classList.add('drag-over');}
+}
+function onTouchEnd(e){
+  if(!touchDragId) return;
+  const touch=e.changedTouches[0];
+  if(touchClone){touchClone.remove();touchClone=null;}
+  document.querySelectorAll('.bl-item').forEach(el=>{el.style.opacity='';el.classList.remove('drag-over');});
+  // Trouver la destination
+  const el=document.elementFromPoint(touch.clientX,touch.clientY);
+  const item=el&&el.closest('.bl-item');
+  if(item){
+    const dstId=parseInt(item.dataset.id);
+    if(dstId&&dstId!==touchDragId){
+      const srcIdx=tasks.findIndex(t=>t.id===touchDragId);
+      const dstIdx=tasks.findIndex(t=>t.id===dstId);
+      if(srcIdx>=0&&dstIdx>=0){const [m]=tasks.splice(srcIdx,1);tasks.splice(dstIdx,0,m);}
+    }
+  }
+  touchDragId=null;
+  render();
+  savePositions();
+}
+document.addEventListener('touchmove',e=>{if(touchDragId)onTouchMove(e);},{passive:false});
+document.addEventListener('touchend',e=>{if(touchDragId)onTouchEnd(e);});
+
+
+function onFocusDragStart(e,id){
+  focusDragSrcId=id;
+  e.dataTransfer.effectAllowed='move';
+  setTimeout(()=>{
+    const el=document.querySelector(`.focus-slot[data-id="${id}"]`);
+    if(el) el.classList.add('dragging-focus');
+  },0);
+}
+function onFocusDragOver(e,id){
+  e.preventDefault();
+  document.querySelectorAll('.focus-slot').forEach(el=>el.classList.remove('drag-over-focus'));
+  const el=document.querySelector(`.focus-slot[data-id="${id}"]`);
+  if(el&&id!==focusDragSrcId) el.classList.add('drag-over-focus');
+}
+function onFocusDrop(e,id){
+  e.preventDefault();
+  if(!focusDragSrcId||focusDragSrcId===id) return;
+  const ft=tasks.filter(t=>t.inFocus&&!t.done);
+  const srcIdx=tasks.findIndex(t=>t.id===focusDragSrcId);
+  const dstIdx=tasks.findIndex(t=>t.id===id);
+  if(srcIdx<0||dstIdx<0) return;
+  // Échanger les positions dans tasks
+  const srcPos=tasks[srcIdx].position;
+  tasks[srcIdx].position=tasks[dstIdx].position;
+  tasks[dstIdx].position=srcPos;
+  document.querySelectorAll('.focus-slot').forEach(el=>el.classList.remove('drag-over-focus','dragging-focus'));
+  focusDragSrcId=null;
+  render();
+  // Sauvegarder
+  updateTaskDB(tasks[srcIdx]);
+  updateTaskDB(tasks[dstIdx]);
+}
+function onFocusDragEnd(){
+  document.querySelectorAll('.focus-slot').forEach(el=>el.classList.remove('drag-over-focus','dragging-focus'));
+  focusDragSrcId=null;
+}
+
+// Touch focus
+let focusTouchId=null, focusTouchClone=null, focusTouchOffX=0, focusTouchOffY=0;
+function onFocusTouchStart(e,id){
+  const touch=e.touches[0];
+  focusTouchId=id;
+  focusTouchOffX=touch.clientX; focusTouchOffY=touch.clientY;
+  const el=e.currentTarget.closest('.focus-slot');
+  focusTouchClone=el.cloneNode(true);
+  const r=el.getBoundingClientRect();
+  focusTouchClone.style.cssText=`position:fixed;z-index:9999;width:${el.offsetWidth}px;opacity:.85;pointer-events:none;border:1.5px solid #007AFF;border-radius:12px;background:#E8F0FF;left:${r.left}px;top:${r.top}px;`;
+  document.body.appendChild(focusTouchClone);
+  el.style.opacity='.3';
+}
+function onFocusTouchMove(e){
+  if(!focusTouchId||!focusTouchClone) return;
+  e.preventDefault();
+  const touch=e.touches[0];
+  const dx=touch.clientX-focusTouchOffX, dy=touch.clientY-focusTouchOffY;
+  const r=focusTouchClone.getBoundingClientRect();
+  focusTouchClone.style.left=(r.left+dx)+'px';
+  focusTouchClone.style.top=(r.top+dy)+'px';
+  focusTouchOffX=touch.clientX; focusTouchOffY=touch.clientY;
+  focusTouchClone.style.display='none';
+  const el=document.elementFromPoint(touch.clientX,touch.clientY);
+  focusTouchClone.style.display='';
+  const slot=el&&el.closest('.focus-slot[data-id]');
+  document.querySelectorAll('.focus-slot').forEach(x=>x.classList.remove('drag-over-focus'));
+  if(slot){const hid=parseInt(slot.dataset.id);if(hid&&hid!==focusTouchId)slot.classList.add('drag-over-focus');}
+}
+function onFocusTouchEnd(e){
+  if(!focusTouchId) return;
+  const touch=e.changedTouches[0];
+  if(focusTouchClone){focusTouchClone.remove();focusTouchClone=null;}
+  document.querySelectorAll('.focus-slot').forEach(el=>{el.style.opacity='';el.classList.remove('drag-over-focus');});
+  focusTouchClone&&focusTouchClone.style&&(focusTouchClone.style.display='none');
+  const el=document.elementFromPoint(touch.clientX,touch.clientY);
+  const slot=el&&el.closest('.focus-slot[data-id]');
+  if(slot){
+    const dstId=parseInt(slot.dataset.id);
+    if(dstId&&dstId!==focusTouchId){
+      const si=tasks.findIndex(t=>t.id===focusTouchId);
+      const di=tasks.findIndex(t=>t.id===dstId);
+      if(si>=0&&di>=0){const sp=tasks[si].position;tasks[si].position=tasks[di].position;tasks[di].position=sp;updateTaskDB(tasks[si]);updateTaskDB(tasks[di]);}
+    }
+  }
+  focusTouchId=null;
+  render();
+}
+document.addEventListener('touchmove',e=>{if(focusTouchId)onFocusTouchMove(e);},{passive:false});
+document.addEventListener('touchend',e=>{if(focusTouchId)onFocusTouchEnd(e);});
+
 function setFilter(cat){
   activeFilter=cat;
   render();
@@ -674,13 +869,20 @@ function taskSub(t){
   return s+'</div>';
 }
 function renderFocus(){
-  const ft=focusTasks(),done=ft.filter(t=>t.done).length;
+  const ft=focusTasks().sort((a,b)=>(a.position||0)-(b.position||0)),done=ft.filter(t=>t.done).length;
   let h=gpsBarHTML()+nearbyHTML();
   h+=`<div class="focus-header"><span class="focus-title">Mes 3 priorités du jour</span><span class="focus-sub">${done}/${ft.length} faites</span></div><div class="focus-slots">`;
   for(let i=0;i<3;i++){
     const t=ft[i];
     if(t){
-      h+=`<div class="focus-slot filled${t.nearby&&!t.done?' nearby':''}${t.done?' done-s':''}">
+      h+=`<div class="focus-slot filled${t.nearby&&!t.done?' nearby':''}${t.done?' done-s':''}"
+        data-id="${t.id}"
+        draggable="true"
+        ondragstart="onFocusDragStart(event,${t.id})"
+        ondragover="onFocusDragOver(event,${t.id})"
+        ondrop="onFocusDrop(event,${t.id})"
+        ondragend="onFocusDragEnd()">
+        <span class="focus-drag-handle" ontouchstart="onFocusTouchStart(event,${t.id})" style="${t.done?'display:none':''}">⠿</span>
         <div class="mcheck${t.done?' done':''}" onclick="toggleDone(${t.id})"></div>
         <div style="flex:1;min-width:0"><div class="stext${t.done?' done':''}">${t.text}</div>${taskSub(t)}</div>
         <span class="cpill cat-${t.cat}">${catLabel(t.cat)}</span>
@@ -748,8 +950,15 @@ function renderBacklog(){
   const filtered=tasks.filter(t=>activeFilter==='all'||t.cat===activeFilter);
   if(!filtered.length){h+=`<div style="text-align:center;padding:2.5rem;font-size:14px;color:#86868B">Aucune tâche dans cette catégorie</div>`;document.getElementById('tab-backlog').innerHTML=h;return;}
   h+=`<div class="bl-list">`;
-  [...filtered].sort((a,b)=>{if(a.done!==b.done)return a.done-b.done;return b.nearby-a.nearby;}).forEach(t=>{
-    h+=`<div class="bl-item${t.nearby&&!t.done?' nearby':''}" style="${t.done?'opacity:.5':''}">
+  [...filtered].sort((a,b)=>{if(a.done!==b.done)return a.done-b.done;if(a.done)return 0;return (a.position||0)-(b.position||0);}).forEach(t=>{
+    h+=`<div class="bl-item${t.nearby&&!t.done?' nearby':''}" data-id="${t.id}"
+      draggable="true"
+      ondragstart="onDragStart(event,${t.id})"
+      ondragover="onDragOver(event,${t.id})"
+      ondrop="onDrop(event,${t.id})"
+      ondragend="onDragEnd()"
+      style="${t.done?'opacity:.5':''}">
+      <span class="drag-handle" ontouchstart="onTouchStart(event,${t.id})" style="${t.done?'display:none':''}">⠿</span>
       <div class="mcheck${t.done?' done':''}" onclick="toggleDone(${t.id})" style="width:20px;height:20px"></div>
       <div style="flex:1;min-width:0"><div class="bl-text${t.done?' done':''}">${t.text}</div>${taskSub(t)}</div>
       <span class="cpill cat-${t.cat}">${catLabel(t.cat)}</span>

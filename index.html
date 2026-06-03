@@ -141,6 +141,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .btn-edit-cancel{border:1px solid #E5E5EA;border-radius:10px;padding:12px 20px;font-size:14px;background:#fff;color:#86868B;cursor:pointer;font-family:inherit}
 .btn-edit-icon{background:none;border:none;cursor:pointer;padding:4px 6px;color:#86868B;opacity:.6;font-size:16px}
 .btn-edit-icon:hover{opacity:1}
+
+.filter-row{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.filter-chip{font-size:12px;padding:5px 12px;border-radius:999px;border:1px solid #E5E5EA;background:#fff;color:#86868B;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
+.filter-chip:hover{border-color:#C7C7CC;color:#1D1D1F}
+.filter-chip.active{border-color:transparent;color:#fff}
+.filter-chip.active.all{background:#1D1D1F}
+.filter-chip.active.perso{background:#4A3F8C}
+.filter-chip.active.travail{background:#7A4D0A}
+.filter-chip.active.courses{background:#2C5F0A}
+.filter-chip.active.sante{background:#8B1F1F}
+.filter-chip.active.autre{background:#86868B}
 </style>
 </head>
 <body>
@@ -263,6 +274,7 @@ const MOMENTS=['matin','apresmidi','soir'];
 const ML={matin:'Matin',apresmidi:'Après-midi',soir:'Soir'};
 const MI={matin:{bg:'#FEF3E2',icon:'🌅'},apresmidi:{bg:'#E8F0FF',icon:'☀️'},soir:{bg:'#EDEDF8',icon:'🌙'}};
 let tasks=[], syncing=false;
+let activeFilter='all';
 let gpsActive=false, gpsWatcher=null, userPos=null, currentPlaceName=null;
 let notifiedIds=new Set();
 let newTaskCoords=null, newTaskLocName=null;
@@ -596,6 +608,11 @@ async function simulateNearby(){
 }
 
 // ── Task ops ──────────────────────────────────────────────────
+function setFilter(cat){
+  activeFilter=cat;
+  render();
+}
+
 function catLabel(c){return{perso:'Perso',travail:'Travail',courses:'Courses',sante:'Santé',autre:'Autre'}[c]||c;}
 function focusTasks(){return tasks.filter(t=>t.inFocus);}
 function canFocus(){return focusTasks().length<3;}
@@ -712,9 +729,26 @@ function renderBacklog(){
       </div>
     </div>`;
   }
-  if(!tasks.length){h+=`<div style="text-align:center;padding:2.5rem;font-size:14px;color:#86868B">Aucune tâche</div>`;document.getElementById('tab-backlog').innerHTML=h;return;}
+  // Filtres par catégorie
+  const cats=[
+    {k:'all',l:'Toutes'},
+    {k:'perso',l:'Perso'},
+    {k:'travail',l:'Travail'},
+    {k:'courses',l:'Courses'},
+    {k:'sante',l:'Santé'},
+    {k:'autre',l:'Autre'},
+  ];
+  h+=`<div class="filter-row">`;
+  cats.forEach(c=>{
+    const active=activeFilter===c.k;
+    h+=`<button class="filter-chip${active?' active '+c.k:''}" onclick="setFilter('${c.k}')">${c.l}</button>`;
+  });
+  h+='</div>';
+
+  const filtered=tasks.filter(t=>activeFilter==='all'||t.cat===activeFilter);
+  if(!filtered.length){h+=`<div style="text-align:center;padding:2.5rem;font-size:14px;color:#86868B">Aucune tâche dans cette catégorie</div>`;document.getElementById('tab-backlog').innerHTML=h;return;}
   h+=`<div class="bl-list">`;
-  [...tasks].sort((a,b)=>{if(a.done!==b.done)return a.done-b.done;return b.nearby-a.nearby;}).forEach(t=>{
+  [...filtered].sort((a,b)=>{if(a.done!==b.done)return a.done-b.done;return b.nearby-a.nearby;}).forEach(t=>{
     h+=`<div class="bl-item${t.nearby&&!t.done?' nearby':''}" style="${t.done?'opacity:.5':''}">
       <div class="mcheck${t.done?' done':''}" onclick="toggleDone(${t.id})" style="width:20px;height:20px"></div>
       <div style="flex:1;min-width:0"><div class="bl-text${t.done?' done':''}">${t.text}</div>${taskSub(t)}</div>

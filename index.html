@@ -492,12 +492,7 @@ function openMap(){
   setTimeout(initMap,60);
 }
 function closeMap(){document.getElementById('map-modal').classList.add('hidden');}
-function confirmMap(){
-  if(!pickedCoords) return;
-  newTaskCoords=pickedCoords;
-  newTaskLocName=`${pickedCoords.lat.toFixed(4)}, ${pickedCoords.lon.toFixed(4)}`;
-  closeMap();render();
-}
+
 
 // ── GPS ───────────────────────────────────────────────────────
 function haversine(a,b,c,d){const R=6371000,dLat=(c-a)*Math.PI/180,dLon=(d-b)*Math.PI/180;const x=Math.sin(dLat/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
@@ -726,11 +721,16 @@ function openEdit(id){
   document.getElementById('edit-text').value=t.text;
   document.getElementById('edit-cat').value=t.cat||'autre';
   document.getElementById('edit-moment').value=t.moment||'matin';
+  updateEditLocBtn();
+  document.getElementById('edit-modal').classList.remove('hidden');
+}
+
+function updateEditLocBtn(){
   const locBtn=document.getElementById('edit-loc-btn');
   const locLabel=document.getElementById('edit-loc-label');
+  if(!locBtn||!locLabel) return;
   if(editCoords){locBtn.classList.add('has-loc');locLabel.textContent='📍 '+editLocName;}
   else{locBtn.classList.remove('has-loc');locLabel.textContent='Ajouter un lieu sur la carte';}
-  document.getElementById('edit-modal').classList.remove('hidden');
 }
 
 function closeEdit(){
@@ -739,34 +739,35 @@ function closeEdit(){
 }
 
 function openMapForEdit(){
-  // Ferme temporairement le modal édition, ouvre la carte
   document.getElementById('edit-modal').classList.add('hidden');
   window._editMapMode=true;
   openMap();
 }
 
-// Surcharge confirmMap pour le mode édition
-const _confirmMapOrig=window.confirmMap;
 function confirmMap(){
   if(window._editMapMode){
     window._editMapMode=false;
     if(pickedCoords){
-      editCoords={...pickedCoords};
+      editCoords={lat:pickedCoords.lat,lon:pickedCoords.lon};
       editLocName=pickedCoords.lat.toFixed(4)+', '+pickedCoords.lon.toFixed(4);
     }
     closeMap();
-    // Rouvre le modal d'édition
-    const locBtn=document.getElementById('edit-loc-btn');
-    const locLabel=document.getElementById('edit-loc-label');
-    if(editCoords){locBtn.classList.add('has-loc');locLabel.textContent='📍 '+editLocName;}
+    updateEditLocBtn();
     document.getElementById('edit-modal').classList.remove('hidden');
     return;
   }
-  // Comportement normal
   if(!pickedCoords) return;
-  newTaskCoords=pickedCoords;
+  newTaskCoords={lat:pickedCoords.lat,lon:pickedCoords.lon};
   newTaskLocName=pickedCoords.lat.toFixed(4)+', '+pickedCoords.lon.toFixed(4);
   closeMap();render();
+}
+
+function updateEditLocBtn(){
+  const locBtn=document.getElementById('edit-loc-btn');
+  const locLabel=document.getElementById('edit-loc-label');
+  if(!locBtn) return;
+  if(editCoords){locBtn.classList.add('has-loc');locLabel.textContent='📍 '+editLocName;}
+  else{locBtn.classList.remove('has-loc');locLabel.textContent='Ajouter un lieu sur la carte';}
 }
 
 async function saveEdit(){

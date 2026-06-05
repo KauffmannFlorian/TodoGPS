@@ -385,8 +385,9 @@ async function submitAuth(){
       if(password.length<6){showAuthError('Mot de passe trop court (6 caractères min).');btn.disabled=false;btn.textContent='Créer un compte';return;}
       const{data,error}=await supa.auth.signUp({email,password});
       if(error) throw error;
-      showAuthError('Vérifie ton email pour confirmer ton compte, puis connecte-toi.');
-      btn.disabled=false;btn.textContent='Créer un compte';return;
+      if(data.user) onLogin(data.user);
+      else{showAuthError('Vérifie ton email pour confirmer ton compte.');btn.disabled=false;btn.textContent='Créer un compte';}
+      return;
     }
   }catch(e){
     showAuthError(e.message||'Erreur de connexion.');

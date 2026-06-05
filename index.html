@@ -410,7 +410,7 @@ function onLogin(user){
   currentUser=user;
   document.getElementById('auth-screen').classList.add('hidden');
   renderUserMenu();
-  checkSession();
+  loadData();
 }
 
 function renderUserMenu(){

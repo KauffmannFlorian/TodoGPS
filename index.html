@@ -447,26 +447,15 @@ async function signOut(){
 }
 
 // Vérifier session existante au démarrage
-async function checkSession(){
+function checkSession(){
   const token=localStorage.getItem('sb_token');
   const userStr=localStorage.getItem('sb_user');
   if(token&&userStr){
-    try{
-      // Vérifier que le token est encore valide
-      const res=await fetch(SUPA_URL+'/auth/v1/user',{
-        headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+token}
-      });
-      if(res.ok){
-        accessToken=token;
-        onLogin(JSON.parse(userStr));
-        return;
-      }
-    }catch(e){}
+    accessToken=token;
+    onLogin(JSON.parse(userStr));
+  } else {
+    document.getElementById('auth-screen').classList.remove('hidden');
   }
-  // Token invalide ou absent
-  localStorage.removeItem('sb_token');
-  localStorage.removeItem('sb_user');
-  document.getElementById('auth-screen').classList.remove('hidden');
 }
 
 // ── App state ─────────────────────────────────────────────────

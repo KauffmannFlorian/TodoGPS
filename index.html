@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Todo GPS</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F5F5F7;color:#1D1D1F;min-height:100vh}
@@ -378,15 +378,19 @@ async function submitAuth(){
   try{
     if(authMode==='login'){
       const{data,error}=await supa.auth.signInWithPassword({email,password});
+      console.log('signIn result:', JSON.stringify(data), error);
       if(error) throw error;
-      onLogin(data.user);
+      if(data&&data.user) onLogin(data.user);
+      else if(data&&data.session) onLogin(data.session.user);
     } else {
       const confirm=document.getElementById('auth-confirm').value;
       if(password!==confirm){showAuthError('Les mots de passe ne correspondent pas.');btn.disabled=false;btn.textContent='Créer un compte';return;}
       if(password.length<6){showAuthError('Mot de passe trop court (6 caractères min).');btn.disabled=false;btn.textContent='Créer un compte';return;}
       const{data,error}=await supa.auth.signUp({email,password});
+      console.log('signUp result:', JSON.stringify(data), error);
       if(error) throw error;
-      if(data.user) onLogin(data.user);
+      if(data&&data.user) onLogin(data.user);
+      else if(data&&data.session) onLogin(data.session.user);
       else{showAuthError('Vérifie ton email pour confirmer ton compte.');btn.disabled=false;btn.textContent='Créer un compte';}
       return;
     }

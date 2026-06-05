@@ -334,7 +334,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 // ── Supabase config ───────────────────────────────────────────
 const SUPA_URL='https://ihmrstjcccnjueygoqms.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlobXJzdGpjY2NuanVleWdvcW1zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0MDY2NDgsImV4cCI6MjA5NTk4MjY0OH0.ptvMGYlUJwiyG_-aeYpgtXt19OnNsOauNYQQowHaYbU';
-const supa=supabase.createClient(SUPA_URL,SUPA_KEY);
+const supa=window.supabase.createClient(SUPA_URL,SUPA_KEY);
 let currentUser=null;
 
 async function getAuthHeaders(){

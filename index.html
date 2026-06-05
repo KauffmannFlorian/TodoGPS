@@ -337,14 +337,15 @@ const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 const supa=supabase.createClient(SUPA_URL,SUPA_KEY);
 let currentUser=null;
 
-function getAuthHeaders(){
-  const session=supa.auth.session&&supa.auth.session();
-  const token=session?session.access_token:SUPA_KEY;
+async function getAuthHeaders(){
+  const{data}=await supa.auth.getSession();
+  const token=data&&data.session?data.session.access_token:SUPA_KEY;
   return{'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+token,'Prefer':'return=representation'};
 }
 
 async function dbFetch(path,opts={}){
-  const res=await fetch(SUPA_URL+'/rest/v1/'+path,{headers:getAuthHeaders(),...opts});
+  const headers=await getAuthHeaders();
+  const res=await fetch(SUPA_URL+'/rest/v1/'+path,{headers,...opts});
   if(!res.ok) throw new Error(await res.text());
   return res.status===204?null:res.json();
 }
@@ -426,7 +427,7 @@ document.addEventListener('click',e=>{
 });
 
 async function signOut(){
-  await supa.auth.signOut();
+  await supa.auth.signOut().catch(()=>{});
   currentUser=null;tasks=[];
   document.getElementById('auth-screen').classList.remove('hidden');
   document.getElementById('user-menu').style.display='none';
@@ -435,10 +436,15 @@ async function signOut(){
 
 // Vérifier session existante au démarrage
 async function checkSession(){
-  const{data:{session}}=await supa.auth.getSession();
-  if(session&&session.user){
-    onLogin(session.user);
-  }
+  try{
+    const{data,error}=await supa.auth.getSession();
+    if(data&&data.session&&data.session.user){
+      onLogin(data.session.user);
+      return;
+    }
+  }catch(e){}
+  // Pas de session — afficher l'écran login
+  document.getElementById('auth-screen').classList.remove('hidden');
 }
 
 // ── App state ─────────────────────────────────────────────────

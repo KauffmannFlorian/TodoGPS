@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Todo GPS</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F5F5F7;color:#1D1D1F;min-height:100vh}
@@ -164,9 +165,70 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .focus-slot.dragging-focus{opacity:.3}
 .focus-drag-handle{color:#C7C7CC;font-size:18px;cursor:grab;padding:0 4px;flex-shrink:0;touch-action:none;user-select:none;line-height:1}
 .focus-drag-handle:hover{color:#86868B}
+
+.auth-screen{position:fixed;inset:0;background:#F5F5F7;z-index:9000;display:flex;align-items:center;justify-content:center;padding:1rem}
+.auth-screen.hidden{display:none}
+.auth-card{background:#fff;border-radius:20px;border:1px solid #E5E5EA;padding:2rem;width:100%;max-width:380px;box-shadow:0 8px 30px rgba(0,0,0,.08)}
+.auth-logo{text-align:center;margin-bottom:1.5rem}
+.auth-logo-mark{width:52px;height:52px;border-radius:16px;background:#007AFF;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:24px}
+.auth-logo h1{font-size:20px;font-weight:600;color:#1D1D1F}
+.auth-logo p{font-size:13px;color:#86868B;margin-top:4px}
+.auth-tabs{display:flex;gap:4px;background:#F2F2F7;border-radius:10px;padding:3px;margin-bottom:1.5rem}
+.auth-tab{flex:1;padding:8px;border:none;background:none;border-radius:7px;font-size:13px;cursor:pointer;color:#86868B;font-family:inherit;font-weight:500;transition:all .15s}
+.auth-tab.active{background:#fff;color:#1D1D1F;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.auth-field{margin-bottom:12px}
+.auth-field label{font-size:12px;font-weight:500;color:#86868B;display:block;margin-bottom:5px}
+.auth-field input{width:100%;border:1px solid #E5E5EA;border-radius:10px;padding:11px 14px;font-size:15px;font-family:inherit;outline:none;transition:border-color .15s;background:#F9F9FB}
+.auth-field input:focus{border-color:#007AFF;background:#fff}
+.btn-auth{width:100%;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:600;background:#007AFF;color:#fff;cursor:pointer;font-family:inherit;margin-top:4px;transition:all .2s}
+.btn-auth:hover{background:#0062CC}
+.btn-auth:disabled{background:#C7C7CC;cursor:default}
+.auth-error{font-size:13px;color:#8B1F1F;background:#FDEAEA;border:1px solid #F5C0C0;border-radius:8px;padding:9px 13px;margin-bottom:12px;display:none}
+.auth-error.visible{display:block}
+.auth-divider{text-align:center;font-size:12px;color:#C7C7CC;margin:16px 0}
+
+/* User menu */
+.user-menu{position:relative}
+.user-avatar{width:32px;height:32px;border-radius:50%;background:#007AFF;color:#fff;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;font-family:inherit;flex-shrink:0}
+.user-dropdown{position:absolute;right:0;top:40px;background:#fff;border:1px solid #E5E5EA;border-radius:12px;padding:8px;min-width:200px;box-shadow:0 8px 24px rgba(0,0,0,.1);z-index:1000;display:none}
+.user-dropdown.open{display:block}
+.user-email{font-size:12px;color:#86868B;padding:6px 10px;border-bottom:1px solid #F2F2F7;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dropdown-item{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;font-size:14px;color:#1D1D1F;cursor:pointer;border:none;background:none;width:100%;font-family:inherit;text-align:left}
+.dropdown-item:hover{background:#F2F2F7}
+.dropdown-item.danger{color:#FF453A}
 </style>
 </head>
 <body>
+
+<!-- Écran authentification -->
+<div class="auth-screen" id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-mark">📍</div>
+      <h1>Todo GPS</h1>
+      <p>Tes tâches, où que tu sois</p>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">Connexion</button>
+      <button class="auth-tab" onclick="switchAuthTab('signup')">Inscription</button>
+    </div>
+    <div id="auth-error" class="auth-error"></div>
+    <div class="auth-field">
+      <label>Email</label>
+      <input type="email" id="auth-email" placeholder="ton@email.com" onkeydown="if(event.key==='Enter')document.getElementById('auth-password').focus()"/>
+    </div>
+    <div class="auth-field">
+      <label>Mot de passe</label>
+      <input type="password" id="auth-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')submitAuth()"/>
+    </div>
+    <div class="auth-field" id="auth-confirm-field" style="display:none">
+      <label>Confirmer le mot de passe</label>
+      <input type="password" id="auth-confirm" placeholder="••••••••" onkeydown="if(event.key==='Enter')submitAuth()"/>
+    </div>
+    <button class="btn-auth" id="btn-auth" onclick="submitAuth()">Se connecter</button>
+  </div>
+</div>
+
 
 <!-- Modal édition -->
 <div class="edit-modal hidden" id="edit-modal">
@@ -251,12 +313,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </div>
 
 <div id="app">
-  <div class="top-row">
+  <div class="top-row" style="align-items:center">
     <div class="app-title">
       Mes tâches
       <span class="sync-badge loading" id="sync-badge">Connexion...</span>
     </div>
-    <span class="save-badge" id="save-txt"></span>
+    <span class="save-badge" id="save-txt"></span><div id="user-menu" class="user-menu" style="display:none"></div>
   </div>
   <div class="tabs">
     <button class="tab active" onclick="showTab('focus')">Focus</button>
@@ -272,12 +334,110 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 // ── Supabase config ───────────────────────────────────────────
 const SUPA_URL='https://ihmrstjcccnjueygoqms.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlobXJzdGpjY2NuanVleWdvcW1zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0MDY2NDgsImV4cCI6MjA5NTk4MjY0OH0.ptvMGYlUJwiyG_-aeYpgtXt19OnNsOauNYQQowHaYbU';
-const H={'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Prefer':'return=representation'};
+const supa=supabase.createClient(SUPA_URL,SUPA_KEY);
+let currentUser=null;
+
+function getAuthHeaders(){
+  const session=supa.auth.session&&supa.auth.session();
+  const token=session?session.access_token:SUPA_KEY;
+  return{'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+token,'Prefer':'return=representation'};
+}
 
 async function dbFetch(path,opts={}){
-  const res=await fetch(SUPA_URL+'/rest/v1/'+path,{headers:H,...opts});
+  const res=await fetch(SUPA_URL+'/rest/v1/'+path,{headers:getAuthHeaders(),...opts});
   if(!res.ok) throw new Error(await res.text());
   return res.status===204?null:res.json();
+}
+
+
+// ── Auth ─────────────────────────────────────────────────────
+let authMode='login';
+
+function switchAuthTab(mode){
+  authMode=mode;
+  document.querySelectorAll('.auth-tab').forEach((b,i)=>b.classList.toggle('active',['login','signup'][i]===mode));
+  document.getElementById('auth-confirm-field').style.display=mode==='signup'?'block':'none';
+  document.getElementById('btn-auth').textContent=mode==='login'?'Se connecter':'Créer un compte';
+  document.getElementById('auth-error').classList.remove('visible');
+}
+
+function showAuthError(msg){
+  const el=document.getElementById('auth-error');
+  el.textContent=msg;
+  el.classList.add('visible');
+}
+
+async function submitAuth(){
+  const email=document.getElementById('auth-email').value.trim();
+  const password=document.getElementById('auth-password').value;
+  if(!email||!password){showAuthError('Email et mot de passe requis.');return;}
+  const btn=document.getElementById('btn-auth');
+  btn.disabled=true;btn.textContent='...';
+  document.getElementById('auth-error').classList.remove('visible');
+  try{
+    if(authMode==='login'){
+      const{data,error}=await supa.auth.signInWithPassword({email,password});
+      if(error) throw error;
+      onLogin(data.user);
+    } else {
+      const confirm=document.getElementById('auth-confirm').value;
+      if(password!==confirm){showAuthError('Les mots de passe ne correspondent pas.');btn.disabled=false;btn.textContent='Créer un compte';return;}
+      if(password.length<6){showAuthError('Mot de passe trop court (6 caractères min).');btn.disabled=false;btn.textContent='Créer un compte';return;}
+      const{data,error}=await supa.auth.signUp({email,password});
+      if(error) throw error;
+      showAuthError('Vérifie ton email pour confirmer ton compte, puis connecte-toi.');
+      btn.disabled=false;btn.textContent='Créer un compte';return;
+    }
+  }catch(e){
+    showAuthError(e.message||'Erreur de connexion.');
+    btn.disabled=false;btn.textContent=authMode==='login'?'Se connecter':'Créer un compte';
+  }
+}
+
+function onLogin(user){
+  currentUser=user;
+  document.getElementById('auth-screen').classList.add('hidden');
+  renderUserMenu();
+  checkSession();
+}
+
+function renderUserMenu(){
+  if(!currentUser) return;
+  const initial=(currentUser.email||'U')[0].toUpperCase();
+  const menu=document.getElementById('user-menu');
+  menu.style.display='block';
+  menu.innerHTML=`<button class="user-avatar" onclick="toggleDropdown()">${initial}</button>
+    <div class="user-dropdown" id="user-dropdown">
+      <div class="user-email">${currentUser.email}</div>
+      <button class="dropdown-item danger" onclick="signOut()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        Se déconnecter
+      </button>
+    </div>`;
+}
+
+function toggleDropdown(){
+  document.getElementById('user-dropdown').classList.toggle('open');
+}
+document.addEventListener('click',e=>{
+  const dd=document.getElementById('user-dropdown');
+  if(dd&&!e.target.closest('.user-menu')) dd.classList.remove('open');
+});
+
+async function signOut(){
+  await supa.auth.signOut();
+  currentUser=null;tasks=[];
+  document.getElementById('auth-screen').classList.remove('hidden');
+  document.getElementById('user-menu').style.display='none';
+  render();
+}
+
+// Vérifier session existante au démarrage
+async function checkSession(){
+  const{data:{session}}=await supa.auth.getSession();
+  if(session&&session.user){
+    onLogin(session.user);
+  }
 }
 
 // ── App state ─────────────────────────────────────────────────
@@ -305,7 +465,7 @@ function setSave(t){const el=document.getElementById('save-txt');if(el)el.textCo
 function toRow(t){
   return{text:t.text,cat:t.cat,moment:t.moment,loc_name:t.locName||'',
     coords:t.coords?JSON.stringify(t.coords):null,
-    in_focus:t.inFocus,done:t.done,position:t.position||0};
+    in_focus:t.inFocus,done:t.done,position:t.position||0,user_id:currentUser?currentUser.id:null};
 }
 function fromRow(r){
   return{id:r.id,text:r.text,cat:r.cat||'autre',moment:r.moment||'matin',
@@ -317,7 +477,7 @@ function fromRow(r){
 async function loadData(){
   setSyncBadge('loading','Chargement...');
   try{
-    const rows=await dbFetch('tasks?order=id.asc');
+    const rows=await dbFetch('tasks?user_id=eq.'+currentUser.id+'&order=position.asc');
     tasks=rows.map(fromRow).sort((a,b)=>(a.position||0)-(b.position||0));
     setSyncBadge('ok','✓ Synchronisé');
     render();

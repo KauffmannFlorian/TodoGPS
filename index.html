@@ -1198,7 +1198,6 @@ function optimizeRoute(){
     current={lat:nearest.coords.lat,lon:nearest.coords.lon};
   }
   routeOrder=ordered.map(t=>t.id);
-  drawTrajetMap();
   renderTrajet();
 }
 
@@ -1258,62 +1257,47 @@ function hoursLabel(status,hours){
 // ── Render onglet trajet ──────────────────────────────────────
 async function renderTrajet(){
   const el=document.getElementById('tab-trajet');
-  if(!el) return;
-  if(!tasks) return;
+  if(!el||!tasks) return;
   const withCoords=tasks.filter(t=>t.coords&&!t.done);
 
   if(!withCoords.length){
     el.innerHTML=`<div class="trajet-empty">
       <div class="em-icon">🗺️</div>
       <div style="font-weight:500;color:#1D1D1F;margin-bottom:6px">Aucun lieu épinglé</div>
-      <div>Ajoute des lieux à tes tâches dans l'onglet "Toutes" pour voir la carte et optimiser ton trajet.</div>
+      <div>Ajoute des lieux à tes tâches pour voir la carte et optimiser ton trajet.</div>
     </div>`;
+    trajetMapInit=false;
     return;
   }
 
-  // Contrôles
-  let h=`<div class="trajet-controls">
-    <button class="btn-trajet primary" onclick="optimizeRoute()">
-      ⚡ Optimiser le trajet
-    </button>
-    <button class="btn-trajet" onclick="fetchAllHours()">
-      🕐 Voir les horaires
-    </button>
-    ${routeOrder.length>0?`<button class="btn-trajet" onclick="routeOrder=[];drawTrajetMap();renderTrajet()">✕ Réinitialiser</button>`:''}
-  </div>`;
-
-  // Résumé si route calculée
-  if(routeOrder.length>0){
-    let totalDist=0;
-    const ordered=routeOrder.map(id=>tasks.find(t=>t.id===id)).filter(Boolean);
-    let prev=userPos||{lat:ordered[0].coords.lat,lon:ordered[0].coords.lon};
-    ordered.forEach(t=>{
-      if(t.coords){totalDist+=haversine(prev.lat,prev.lon,t.coords.lat,t.coords.lon);prev={lat:t.coords.lat,lon:t.coords.lon};}
-    });
-    const km=(totalDist/1000).toFixed(1);
-    const mins=Math.round(totalDist/60); // ~60m/min à pied
-    h+=`<div class="route-summary">
-      <div class="summary-item"><div class="summary-val">${ordered.length}</div><div class="summary-lbl">Arrêts</div></div>
-      <div class="summary-item"><div class="summary-val">${km}km</div><div class="summary-lbl">Distance totale</div></div>
-      <div class="summary-item"><div class="summary-val">~${mins}min</div><div class="summary-lbl">À pied</div></div>
-    </div>`;
-  }
-
-  // Carte
-  h+=`<div class="trajet-map-wrap"><canvas id="trajet-canvas"></canvas></div>`;
-
-  // Liste des étapes
   const displayTasks=routeOrder.length>0
     ? routeOrder.map(id=>tasks.find(t=>t.id===id)).filter(Boolean)
     : withCoords;
 
-  h+=`<div class="route-steps">`;
-  displayTasks.forEach((t,i)=>{
+  // Résumé route
+  let summaryHTML='';
+  if(routeOrder.length>0){
+    let totalDist=0;
+    let prev=userPos||{lat:displayTasks[0].coords.lat,lon:displayTasks[0].coords.lon};
+    displayTasks.forEach(t=>{
+      if(t.coords){totalDist+=haversine(prev.lat,prev.lon,t.coords.lat,t.coords.lon);prev={lat:t.coords.lat,lon:t.coords.lon};}
+    });
+    const km=(totalDist/1000).toFixed(1);
+    const mins=Math.round(totalDist/60);
+    summaryHTML=`<div class="route-summary">
+      <div class="summary-item"><div class="summary-val">${displayTasks.length}</div><div class="summary-lbl">Arrêts</div></div>
+      <div class="summary-item"><div class="summary-val">${km}km</div><div class="summary-lbl">Distance</div></div>
+      <div class="summary-item"><div class="summary-val">~${mins}min</div><div class="summary-lbl">À pied</div></div>
+    </div>`;
+  }
+
+  // Steps HTML
+  const stepsHTML=displayTasks.map((t,i)=>{
     const isLast=i===displayTasks.length-1;
     const hours=t._hours||null;
     const status=t._hoursStatus||'unknown';
-    h+=`<div class="route-step" id="step-${t.id}">
-      <div class="step-num">${routeOrder.length>0?i+1:'📍'}</div>
+    return `<div class="route-step">
+      <div class="step-num" style="background:${routeOrder.length>0?'#007AFF':'#FF9F0A'}">${routeOrder.length>0?i+1:'📍'}</div>
       <div class="step-body">
         <div class="step-title">${t.text}</div>
         <div class="step-meta">
@@ -1323,18 +1307,40 @@ async function renderTrajet(){
         </div>
         ${hours||status!=='unknown'?`<div style="margin-top:6px">${hoursLabel(status,hours)}</div>`:''}
       </div>
-      ${!isLast?`<div class="step-connector"></div>`:''}
+      ${!isLast?'<div class="step-connector"></div>':''}
     </div>`;
-  });
-  h+=`</div>`;
+  }).join('');
 
-  el.innerHTML=h;
-  // Initialiser la carte après le render
+  // Mise à jour partielle si carte déjà initialisée
+  if(trajetMapInit&&document.getElementById('trajet-canvas')){
+    document.getElementById('trajet-controls').innerHTML=`
+      <button class="btn-trajet primary" onclick="optimizeRoute()">⚡ Optimiser</button>
+      <button class="btn-trajet" onclick="fetchAllHours()">🕐 Horaires</button>
+      ${routeOrder.length>0?`<button class="btn-trajet" onclick="routeOrder=[];drawTrajetMap();renderTrajet()">✕ Reset</button>`:''}
+    `;
+    document.getElementById('trajet-summary').innerHTML=summaryHTML;
+    document.getElementById('trajet-steps').innerHTML=stepsHTML;
+    drawTrajetMap();
+    return;
+  }
+
+  // Premier rendu complet
+  el.innerHTML=`
+    <div id="trajet-controls" class="trajet-controls">
+      <button class="btn-trajet primary" onclick="optimizeRoute()">⚡ Optimiser</button>
+      <button class="btn-trajet" onclick="fetchAllHours()">🕐 Horaires</button>
+    </div>
+    <div id="trajet-summary"></div>
+    <div class="trajet-map-wrap"><canvas id="trajet-canvas"></canvas></div>
+    <div class="route-steps" id="trajet-steps">${stepsHTML}</div>
+  `;
+
   setTimeout(()=>{
     fitMapToTasks();
     initTrajetMap();
-  },50);
+  },60);
 }
+
 
 async function fetchAllHours(){
   const withCoords=tasks.filter(t=>t.coords&&!t.done);

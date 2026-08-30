@@ -195,6 +195,37 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .dropdown-item{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;font-size:14px;color:#1D1D1F;cursor:pointer;border:none;background:none;width:100%;font-family:inherit;text-align:left}
 .dropdown-item:hover{background:#F2F2F7}
 .dropdown-item.danger{color:#FF453A}
+
+.trajet-map-wrap{position:relative;border-radius:12px;overflow:hidden;border:1px solid #E5E5EA;margin-bottom:1rem}
+#trajet-canvas{display:block;width:100%;cursor:default}
+.trajet-controls{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap}
+.btn-trajet{border:1px solid #E5E5EA;border-radius:8px;padding:9px 14px;font-size:13px;background:#fff;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;transition:all .15s;white-space:nowrap}
+.btn-trajet:hover{background:#F2F2F7}
+.btn-trajet.primary{background:#007AFF;border-color:#007AFF;color:#fff}
+.btn-trajet.primary:hover{background:#0062CC}
+.btn-trajet.green{background:#E8F9EE;border-color:#30D158;color:#1A5C2E}
+.btn-trajet:disabled{opacity:.4;cursor:default}
+.route-steps{display:flex;flex-direction:column;gap:8px;margin-bottom:1rem}
+.route-step{display:flex;align-items:flex-start;gap:12px;background:#fff;border:1px solid #E5E5EA;border-radius:10px;padding:12px 14px;position:relative}
+.route-step.current{border-color:#007AFF;background:#E8F0FF}
+.route-step.done-step{opacity:.5}
+.step-num{width:28px;height:28px;border-radius:50%;background:#007AFF;color:#fff;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-num.done{background:#30D158}
+.step-body{flex:1;min-width:0}
+.step-title{font-size:14px;font-weight:500;color:#1D1D1F;margin-bottom:2px}
+.step-meta{font-size:12px;color:#86868B;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.step-connector{position:absolute;left:26px;bottom:-10px;width:2px;height:10px;background:#E5E5EA;z-index:1}
+.hours-badge{font-size:11px;padding:2px 8px;border-radius:999px;background:#FEF3E2;color:#7A4D0A;border:1px solid #FAD67A}
+.hours-badge.open{background:#E8F9EE;color:#1A5C2E;border-color:#30D158}
+.hours-badge.closed{background:#FDEAEA;color:#8B1F1F;border-color:#F5C0C0}
+.hours-badge.unknown{background:#F2F2F7;color:#86868B;border-color:#E5E5EA}
+.route-summary{background:#F9F9FB;border:1px solid #E5E5EA;border-radius:10px;padding:12px 14px;margin-bottom:1rem;display:flex;gap:16px}
+.summary-item{text-align:center;flex:1}
+.summary-val{font-size:18px;font-weight:600;color:#1D1D1F}
+.summary-lbl{font-size:11px;color:#86868B;margin-top:2px}
+.trajet-empty{text-align:center;padding:3rem 1rem;color:#86868B;font-size:14px}
+.trajet-empty .em-icon{font-size:40px;margin-bottom:12px}
+.optimize-loading{text-align:center;padding:2rem;font-size:13px;color:#86868B}
 </style>
 </head>
 <body>
@@ -322,11 +353,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div class="tabs">
     <button class="tab active" onclick="showTab('focus')">Focus</button>
     <button class="tab" onclick="showTab('backlog')">Toutes</button>
-    <button class="tab" onclick="showTab('moments')">Par moment</button>
+    <button class="tab" onclick="showTab('moments')">Moments</button>
+    <button class="tab" onclick="showTab('trajet')">🗺️ Trajet</button>
   </div>
   <div id="tab-focus" class="section visible"></div>
   <div id="tab-backlog" class="section"></div>
   <div id="tab-moments" class="section"></div>
+  <div id="tab-trajet" class="section"></div>
 </div>
 
 <script>
@@ -464,6 +497,7 @@ const MOMENTS=['matin','apresmidi','soir'];
 const ML={matin:'Matin',apresmidi:'Après-midi',soir:'Soir'};
 const MI={matin:{bg:'#FEF3E2',icon:'🌅'},apresmidi:{bg:'#E8F0FF',icon:'☀️'},soir:{bg:'#EDEDF8',icon:'🌙'}};
 let tasks=[], syncing=false;
+let routeOrder=[], routeLoading=false, trajetMapInit=false;
 let activeFilter='all';
 let dragSrcId=null;
 let focusDragSrcId=null;
@@ -999,6 +1033,319 @@ function onFocusTouchEnd(e){
 }
 document.addEventListener('touchmove',e=>{if(focusTouchId)onFocusTouchMove(e);},{passive:false});
 document.addEventListener('touchend',e=>{if(focusTouchId)onFocusTouchEnd(e);});
+
+
+// ── Onglet Trajet ─────────────────────────────────────────────
+let tCanvas, tCtx, tTileCache={};
+const tMv={lat:25.2048,lon:55.2708,zoom:12};
+
+function initTrajetMap(){
+  tCanvas=document.getElementById('trajet-canvas');
+  if(!tCanvas||trajetMapInit) return;
+  tCtx=tCanvas.getContext('2d');
+  tCanvas.width=tCanvas.parentElement.clientWidth||360;
+  tCanvas.height=300;
+  trajetMapInit=true;
+  drawTrajetMap();
+}
+
+function getTileT(tx,ty,z){
+  const key=`${z}/${tx}/${ty}`;
+  if(tTileCache[key]) return tTileCache[key];
+  const img=new Image(); img.crossOrigin='anonymous';
+  const s=['a','b','c'][(tx+ty)%3];
+  img.src=`https://${s}.tile.openstreetmap.org/${z}/${tx}/${ty}.png`;
+  img.onload=()=>{tTileCache[key]=img;drawTrajetMap();};
+  img.onerror=()=>{tTileCache[key]='err';};
+  tTileCache[key]=null; return null;
+}
+
+function ll2pxT(lat,lon){
+  const cx=tCanvas.width/2,cy=tCanvas.height/2;
+  const TILE=256;
+  return{
+    x:cx+(lon2x(lon,tMv.zoom)-lon2x(tMv.lon,tMv.zoom))*TILE,
+    y:cy+(lat2y(lat,tMv.zoom)-lat2y(tMv.lat,tMv.zoom))*TILE
+  };
+}
+
+function fitMapToTasks(){
+  const withCoords=tasks.filter(t=>t.coords&&!t.done);
+  if(!withCoords.length) return;
+  // Calculer le centre et le zoom
+  const lats=withCoords.map(t=>t.coords.lat);
+  const lons=withCoords.map(t=>t.coords.lon);
+  if(userPos){lats.push(userPos.lat);lons.push(userPos.lon);}
+  tMv.lat=(Math.max(...lats)+Math.min(...lats))/2;
+  tMv.lon=(Math.max(...lons)+Math.min(...lons))/2;
+  // Zoom adaptatif
+  const dLat=Math.max(...lats)-Math.min(...lats);
+  const dLon=Math.max(...lons)-Math.min(...lons);
+  const maxDelta=Math.max(dLat,dLon);
+  if(maxDelta<0.01) tMv.zoom=15;
+  else if(maxDelta<0.05) tMv.zoom=13;
+  else if(maxDelta<0.2) tMv.zoom=11;
+  else tMv.zoom=10;
+}
+
+function drawTrajetMap(){
+  if(!tCanvas||!tCtx) return;
+  const W=tCanvas.width,H=tCanvas.height;
+  const TILE=256;
+  const z=Math.round(tMv.zoom);
+  const n=Math.pow(2,z);
+  tCtx.clearRect(0,0,W,H);
+  tCtx.fillStyle='#E8EAE8'; tCtx.fillRect(0,0,W,H);
+  const cx=W/2,cy=H/2;
+  const cxt=lon2x(tMv.lon,z),cyt=lat2y(tMv.lat,z);
+  for(let tx=Math.floor(cxt-cx/TILE)-1;tx<=Math.floor(cxt+cx/TILE)+1;tx++){
+    for(let ty=Math.floor(cyt-cy/TILE)-1;ty<=Math.floor(cyt+cy/TILE)+1;ty++){
+      if(ty<0||ty>=n) continue;
+      const px=Math.round(cx+(tx-cxt)*TILE),py=Math.round(cy+(ty-cyt)*TILE);
+      const img=getTileT((tx%n+n)%n,ty,z);
+      if(img&&img!=='err'&&img.complete&&img.naturalWidth>0) tCtx.drawImage(img,px,py,TILE,TILE);
+      else{tCtx.fillStyle='#DDE0DC';tCtx.fillRect(px,py,TILE,TILE);}
+    }
+  }
+  // Dessiner la route si calculée
+  const withCoords=routeOrder.length>0
+    ? routeOrder.map(id=>tasks.find(t=>t.id===id)).filter(t=>t&&t.coords)
+    : tasks.filter(t=>t.coords&&!t.done);
+
+  // Ligne de route
+  if(routeOrder.length>1){
+    const pts=[];
+    if(userPos) pts.push(ll2pxT(userPos.lat,userPos.lon));
+    withCoords.forEach(t=>pts.push(ll2pxT(t.coords.lat,t.coords.lon)));
+    tCtx.beginPath();
+    tCtx.setLineDash([6,4]);
+    tCtx.strokeStyle='#007AFF';
+    tCtx.lineWidth=2.5;
+    pts.forEach((p,i)=>i===0?tCtx.moveTo(p.x,p.y):tCtx.lineTo(p.x,p.y));
+    tCtx.stroke();
+    tCtx.setLineDash([]);
+  }
+
+  // Position GPS
+  if(userPos){
+    const p=ll2pxT(userPos.lat,userPos.lon);
+    tCtx.beginPath();tCtx.arc(p.x,p.y,14,0,Math.PI*2);
+    tCtx.fillStyle='rgba(0,122,255,.15)';tCtx.fill();
+    tCtx.beginPath();tCtx.arc(p.x,p.y,7,0,Math.PI*2);
+    tCtx.fillStyle='#007AFF';tCtx.fill();
+    tCtx.strokeStyle='#fff';tCtx.lineWidth=2.5;tCtx.stroke();
+  }
+
+  // Pins des tâches avec numéro d'ordre
+  withCoords.forEach((t,i)=>{
+    const p=ll2pxT(t.coords.lat,t.coords.lon);
+    const color=routeOrder.length>0?'#007AFF':'#FF9F0A';
+    // Ombre
+    tCtx.beginPath();tCtx.arc(p.x,p.y+2,12,0,Math.PI*2);
+    tCtx.fillStyle='rgba(0,0,0,.15)';tCtx.fill();
+    // Corps pin
+    tCtx.beginPath();tCtx.arc(p.x,p.y-14,12,0,Math.PI*2);
+    tCtx.fillStyle=color;tCtx.fill();
+    tCtx.strokeStyle='#fff';tCtx.lineWidth=2.5;tCtx.stroke();
+    // Pointe
+    tCtx.beginPath();tCtx.moveTo(p.x-6,p.y-6);tCtx.lineTo(p.x,p.y+4);tCtx.lineTo(p.x+6,p.y-6);
+    tCtx.fillStyle=color;tCtx.fill();
+    // Numéro
+    if(routeOrder.length>0){
+      tCtx.fillStyle='#fff';tCtx.font='bold 11px -apple-system,sans-serif';
+      tCtx.textAlign='center';tCtx.textBaseline='middle';
+      tCtx.fillText(i+1,p.x,p.y-14);
+    }
+    // Label
+    const label=t.text.substring(0,14)+(t.text.length>14?'…':'');
+    const tw=tCtx.measureText(label).width+14;
+    tCtx.fillStyle='rgba(0,0,0,.72)';
+    tCtx.beginPath();
+    const lx=p.x-tw/2,ly=p.y-52;
+    tCtx.roundRect(lx,ly,tw,20,5);tCtx.fill();
+    tCtx.fillStyle='#fff';tCtx.font='11px -apple-system,sans-serif';
+    tCtx.textAlign='center';tCtx.textBaseline='middle';
+    tCtx.fillText(label,p.x,p.y-42);
+  });
+
+  // Attribution
+  tCtx.fillStyle='rgba(255,255,255,.8)';tCtx.fillRect(0,H-18,220,18);
+  tCtx.fillStyle='#666';tCtx.font='10px sans-serif';
+  tCtx.textAlign='left';tCtx.textBaseline='alphabetic';
+  tCtx.fillText('© OpenStreetMap contributors',4,H-4);
+}
+
+// ── Algorithme d'optimisation du trajet (nearest neighbor) ────
+function optimizeRoute(){
+  const withCoords=tasks.filter(t=>t.coords&&!t.done);
+  if(withCoords.length<2){
+    alert('Il faut au moins 2 tâches avec un lieu pour optimiser.');return;
+  }
+  const start=userPos||{lat:withCoords[0].coords.lat,lon:withCoords[0].coords.lon};
+  let remaining=[...withCoords];
+  const ordered=[];
+  let current=start;
+  while(remaining.length){
+    // Trouver le plus proche
+    let minDist=Infinity,nearest=null,nearestIdx=0;
+    remaining.forEach((t,i)=>{
+      const d=haversine(current.lat,current.lon,t.coords.lat,t.coords.lon);
+      if(d<minDist){minDist=d;nearest=t;nearestIdx=i;}
+    });
+    ordered.push(nearest);
+    remaining.splice(nearestIdx,1);
+    current={lat:nearest.coords.lat,lon:nearest.coords.lon};
+  }
+  routeOrder=ordered.map(t=>t.id);
+  drawTrajetMap();
+  renderTrajet();
+}
+
+// ── Récupérer les horaires via Overpass API (OpenStreetMap) ───
+async function fetchHours(task){
+  if(!task.coords) return null;
+  try{
+    const {lat,lon}=task.coords;
+    const r=0.001; // ~100m de rayon
+    const query=`[out:json][timeout:10];
+      node(${lat-r},${lon-r},${lat+r},${lon+r})[opening_hours];
+      out 1;`;
+    const res=await fetch('https://overpass-api.de/api/interpreter',{
+      method:'POST',body:'data='+encodeURIComponent(query)
+    });
+    const data=await res.json();
+    if(data.elements&&data.elements[0]){
+      return data.elements[0].tags.opening_hours||null;
+    }
+  }catch(e){}
+  return null;
+}
+
+function parseOpenNow(hoursStr){
+  if(!hoursStr) return 'unknown';
+  try{
+    const now=new Date();
+    const day=['Su','Mo','Tu','We','Th','Fr','Sa'][now.getDay()];
+    const h=now.getHours(),m=now.getMinutes();
+    const nowMins=h*60+m;
+    // Parsing simplifié ex: "Mo-Fr 09:00-19:00; Sa 09:00-13:00"
+    const parts=hoursStr.split(';');
+    for(const part of parts){
+      const p=part.trim();
+      const match=p.match(/(\w{2})(?:-(\w{2}))?\s+(\d{2}):(\d{2})-(\d{2}):(\d{2})/);
+      if(!match) continue;
+      const [,d1,d2,h1,m1,h2,m2]=match;
+      const days=['Mo','Tu','We','Th','Fr','Sa','Su'];
+      const idx1=days.indexOf(d1),idx2=d2?days.indexOf(d2):idx1;
+      const dayIdx=days.indexOf(day);
+      if(dayIdx>=idx1&&dayIdx<=idx2){
+        const open=parseInt(h1)*60+parseInt(m1);
+        const close=parseInt(h2)*60+parseInt(m2);
+        return nowMins>=open&&nowMins<close?'open':'closed';
+      }
+    }
+    return 'unknown';
+  }catch(e){return 'unknown';}
+}
+
+function hoursLabel(status,hours){
+  if(status==='open') return `<span class="hours-badge open">Ouvert</span>${hours?'<span style="font-size:11px;color:#86868B"> '+hours+'</span>':''}`;
+  if(status==='closed') return `<span class="hours-badge closed">Fermé</span>${hours?'<span style="font-size:11px;color:#86868B"> '+hours+'</span>':''}`;
+  return `<span class="hours-badge unknown">Horaires inconnus</span>`;
+}
+
+// ── Render onglet trajet ──────────────────────────────────────
+async function renderTrajet(){
+  const el=document.getElementById('tab-trajet');
+  if(!el) return;
+  const withCoords=tasks.filter(t=>t.coords&&!t.done);
+
+  if(!withCoords.length){
+    el.innerHTML=`<div class="trajet-empty">
+      <div class="em-icon">🗺️</div>
+      <div style="font-weight:500;color:#1D1D1F;margin-bottom:6px">Aucun lieu épinglé</div>
+      <div>Ajoute des lieux à tes tâches dans l'onglet "Toutes" pour voir la carte et optimiser ton trajet.</div>
+    </div>`;
+    return;
+  }
+
+  // Contrôles
+  let h=`<div class="trajet-controls">
+    <button class="btn-trajet primary" onclick="optimizeRoute()">
+      ⚡ Optimiser le trajet
+    </button>
+    <button class="btn-trajet" onclick="fetchAllHours()">
+      🕐 Voir les horaires
+    </button>
+    ${routeOrder.length>0?`<button class="btn-trajet" onclick="routeOrder=[];drawTrajetMap();renderTrajet()">✕ Réinitialiser</button>`:''}
+  </div>`;
+
+  // Résumé si route calculée
+  if(routeOrder.length>0){
+    let totalDist=0;
+    const ordered=routeOrder.map(id=>tasks.find(t=>t.id===id)).filter(Boolean);
+    let prev=userPos||{lat:ordered[0].coords.lat,lon:ordered[0].coords.lon};
+    ordered.forEach(t=>{
+      if(t.coords){totalDist+=haversine(prev.lat,prev.lon,t.coords.lat,t.coords.lon);prev={lat:t.coords.lat,lon:t.coords.lon};}
+    });
+    const km=(totalDist/1000).toFixed(1);
+    const mins=Math.round(totalDist/60); // ~60m/min à pied
+    h+=`<div class="route-summary">
+      <div class="summary-item"><div class="summary-val">${ordered.length}</div><div class="summary-lbl">Arrêts</div></div>
+      <div class="summary-item"><div class="summary-val">${km}km</div><div class="summary-lbl">Distance totale</div></div>
+      <div class="summary-item"><div class="summary-val">~${mins}min</div><div class="summary-lbl">À pied</div></div>
+    </div>`;
+  }
+
+  // Carte
+  h+=`<div class="trajet-map-wrap"><canvas id="trajet-canvas"></canvas></div>`;
+
+  // Liste des étapes
+  const displayTasks=routeOrder.length>0
+    ? routeOrder.map(id=>tasks.find(t=>t.id===id)).filter(Boolean)
+    : withCoords;
+
+  h+=`<div class="route-steps">`;
+  displayTasks.forEach((t,i)=>{
+    const isLast=i===displayTasks.length-1;
+    const hours=t._hours||null;
+    const status=t._hoursStatus||'unknown';
+    h+=`<div class="route-step" id="step-${t.id}">
+      <div class="step-num">${routeOrder.length>0?i+1:'📍'}</div>
+      <div class="step-body">
+        <div class="step-title">${t.text}</div>
+        <div class="step-meta">
+          <span class="cpill cat-${t.cat}">${catLabel(t.cat)}</span>
+          ${t.locName?`<span style="font-size:11px;color:#86868B">📍 ${t.locName}</span>`:''}
+          ${t.coords&&userPos?`<span style="font-size:11px;color:#86868B">${fmtDist(Math.round(haversine(userPos.lat,userPos.lon,t.coords.lat,t.coords.lon)))}</span>`:''}
+        </div>
+        ${hours||status!=='unknown'?`<div style="margin-top:6px">${hoursLabel(status,hours)}</div>`:''}
+      </div>
+      ${!isLast?`<div class="step-connector"></div>`:''}
+    </div>`;
+  });
+  h+=`</div>`;
+
+  el.innerHTML=h;
+  // Initialiser la carte après le render
+  setTimeout(()=>{
+    fitMapToTasks();
+    initTrajetMap();
+  },50);
+}
+
+async function fetchAllHours(){
+  const withCoords=tasks.filter(t=>t.coords&&!t.done);
+  const btn=document.querySelector('.btn-trajet:nth-child(2)');
+  if(btn){btn.textContent='⏳ Chargement...';btn.disabled=true;}
+  for(const t of withCoords){
+    const hours=await fetchHours(t);
+    t._hours=hours;
+    t._hoursStatus=parseOpenNow(hours);
+  }
+  if(btn){btn.textContent='🕐 Voir les horaires';btn.disabled=false;}
+  renderTrajet();
+}
 
 function setFilter(cat){
   activeFilter=cat;

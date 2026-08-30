@@ -1356,9 +1356,11 @@ function catLabel(c){return{perso:'Perso',travail:'Travail',courses:'Courses',sa
 function focusTasks(){return tasks.filter(t=>t.inFocus);}
 function canFocus(){return focusTasks().length<3;}
 function showTab(t){
-  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['focus','backlog','moments'][i]===t));
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['focus','backlog','moments','trajet'][i]===t));
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('visible'));
-  document.getElementById('tab-'+t).classList.add('visible');render();
+  document.getElementById('tab-'+t).classList.add('visible');
+  if(t==='trajet') renderTrajet();
+  else render();
 }
 function toggleDone(id){
   const t=tasks.find(x=>x.id===id);

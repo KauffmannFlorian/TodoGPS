@@ -551,7 +551,9 @@ function checkSession(){
   }
 }
 
-// ── App state ─────────────────────────────────────────────────
+// ── App state
+const GEMINI_KEY = 'AQ.Ab8RN6JjZZZBvYe4LCI84ryyl4B6jUzW3SBWUgaJNxrlm1TomQ'; // Remplace par ta clé aistudio.google.com
+ ─────────────────────────────────────────────────
 const MAX=10, RADIUS=500, TILE=256;
 const MOMENTS=['matin','apresmidi','soir'];
 const ML={matin:'Matin',apresmidi:'Après-midi',soir:'Soir'};
@@ -1610,6 +1612,7 @@ function renderMoments(){
 }
 
 
+
 // ── Import photo ──────────────────────────────────────────────
 let photoBase64 = null;
 let extractedTasks = [];
@@ -1659,19 +1662,12 @@ async function analyzePhoto(){
   document.getElementById('photo-status').classList.add('visible');
   document.getElementById('photo-results').innerHTML = '';
 
-  // Récupérer la clé Gemini depuis localStorage ou demander
-  let geminiKey = localStorage.getItem('gemini_api_key');
-  if(!geminiKey){
-    const key = prompt('Entre ta clé API Google Gemini (gratuite sur aistudio.google.com) :');
-    if(!key){btn.disabled=false;btn.textContent='Analyser';return;}
-    localStorage.setItem('gemini_api_key', key);
-    geminiKey = key;
-  }
+  const geminiKey = GEMINI_KEY;
 
   const promptText = 'Analyse cette image contenant une liste de taches. Extrais TOUTES les taches. Pour chaque tache : text (max 80 chars), cat (perso|travail|courses|sante|autre), moment (matin|apresmidi|soir), lieu (null si absent). JSON uniquement sans backticks : {"tasks":[{"text":"...","cat":"...","moment":"...","lieu":null}]}';
 
   try{
-    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+geminiKey, {
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+geminiKey, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
@@ -1721,7 +1717,7 @@ async function analyzePhoto(){
   }catch(e){
     document.getElementById('photo-status').textContent = '❌ Erreur : ' + (e.message||'Réessaie');
     console.error(e);
-    if(e.message?.includes('401')||e.message?.includes('API_KEY')) localStorage.removeItem('gemini_api_key');
+    // Clé invalide — mettre à jour GEMINI_KEY dans le code
   }
 
   btn.disabled = false;

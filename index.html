@@ -1659,57 +1659,31 @@ async function analyzePhoto(){
   document.getElementById('photo-status').classList.add('visible');
   document.getElementById('photo-results').innerHTML = '';
 
-  // Récupérer la clé Claude depuis localStorage ou demander
-  const claudeKey = localStorage.getItem('claude_api_key');
-  if(!claudeKey){
-    const key = prompt('Entre ta clé API Anthropic (sk-ant-...) :');
-    if(!key){btn.disabled=false;btn.textContent='✨ Analyser avec l\'IA';return;}
-    localStorage.setItem('claude_api_key', key);
+  // Récupérer la clé Gemini depuis localStorage ou demander
+  let geminiKey = localStorage.getItem('gemini_api_key');
+  if(!geminiKey){
+    const key = prompt('Entre ta clé API Google Gemini (gratuite sur aistudio.google.com) :');
+    if(!key){btn.disabled=false;btn.textContent='Analyser';return;}
+    localStorage.setItem('gemini_api_key', key);
+    geminiKey = key;
   }
 
-  try{
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': localStorage.getItem('claude_api_key'),
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{
-          role: 'user',
-          content: [
-            {
-              type: 'image',
-              source: {
-                type: 'base64',
-                media_type: 'image/jpeg',
-                data: photoBase64
-              }
-            },
-            {
-              type: 'text',
-              text: `Analyse cette image qui contient une liste de tâches (manuscrite ou imprimée).
-Extrais TOUTES les tâches visibles.
-Pour chaque tâche retourne :
-- text : le texte exact de la tâche (max 80 chars)
-- cat : "perso" | "travail" | "courses" | "sante" | "autre"
-- moment : "matin" | "apresmidi" | "soir"
-- lieu : nom du lieu si mentionné, sinon null
+  const promptText = 'Analyse cette image contenant une liste de taches. Extrais TOUTES les taches. Pour chaque tache : text (max 80 chars), cat (perso|travail|courses|sante|autre), moment (matin|apresmidi|soir), lieu (null si absent). JSON uniquement sans backticks : {"tasks":[{"text":"...","cat":"...","moment":"...","lieu":null}]}';
 
-Réponds UNIQUEMENT en JSON valide sans backticks :
-{"tasks": [{"text":"...","cat":"...","moment":"...","lieu":null}]}`
-            }
-          ]
-        }]
+  try{
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+geminiKey, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        contents: [{parts: [
+          {inline_data: {mime_type: 'image/jpeg', data: photoBase64}},
+          {text: promptText}
+        ]}]
       })
     });
-
     const data = await res.json();
     if(data.error) throw new Error(data.error.message);
-    const raw = data.content?.map(c => c.text || '').join('') || '';
+    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
     extractedTasks = parsed.tasks || [];
 
@@ -1747,7 +1721,7 @@ Réponds UNIQUEMENT en JSON valide sans backticks :
   }catch(e){
     document.getElementById('photo-status').textContent = '❌ Erreur : ' + (e.message||'Réessaie');
     console.error(e);
-    if(e.message?.includes('401')) localStorage.removeItem('claude_api_key');
+    if(e.message?.includes('401')||e.message?.includes('API_KEY')) localStorage.removeItem('gemini_api_key');
   }
 
   btn.disabled = false;

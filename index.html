@@ -226,6 +226,36 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .trajet-empty{text-align:center;padding:3rem 1rem;color:#86868B;font-size:14px}
 .trajet-empty .em-icon{font-size:40px;margin-bottom:12px}
 .optimize-loading{text-align:center;padding:2rem;font-size:13px;color:#86868B}
+
+.photo-modal{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:3000;display:flex;align-items:flex-end;justify-content:center}
+.photo-modal.hidden{display:none}
+.photo-sheet{background:#fff;border-radius:24px 24px 0 0;width:100%;max-width:680px;padding:20px 16px 32px;box-shadow:0 -8px 40px rgba(0,0,0,.15)}
+.photo-sheet h3{font-size:16px;font-weight:600;margin-bottom:6px;color:#1D1D1F}
+.photo-sheet p{font-size:13px;color:#86868B;margin-bottom:16px}
+.photo-drop-zone{border:2px dashed #E5E5EA;border-radius:14px;padding:2rem;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:16px;background:#F9F9FB;position:relative}
+.photo-drop-zone:hover{border-color:#007AFF;background:#E8F0FF}
+.photo-drop-zone.has-image{border-color:#30D158;background:#E8F9EE;padding:.5rem}
+.photo-drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.photo-preview{width:100%;max-height:200px;object-fit:contain;border-radius:8px;display:none}
+.photo-preview.visible{display:block}
+.photo-drop-icon{font-size:36px;margin-bottom:8px}
+.photo-drop-label{font-size:14px;font-weight:500;color:#1D1D1F;margin-bottom:4px}
+.photo-drop-sub{font-size:12px;color:#86868B}
+.photo-actions{display:flex;gap:8px}
+.btn-photo-analyze{flex:1;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:600;background:#007AFF;color:#fff;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn-photo-analyze:hover{background:#0062CC}
+.btn-photo-analyze:disabled{background:#C7C7CC;cursor:default}
+.btn-photo-cancel{border:1px solid #E5E5EA;border-radius:10px;padding:12px 20px;font-size:14px;background:#fff;color:#86868B;cursor:pointer;font-family:inherit}
+.photo-results{margin-top:12px;display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto}
+.photo-task-item{display:flex;align-items:center;gap:8px;background:#F9F9FB;border:1px solid #E5E5EA;border-radius:8px;padding:9px 12px}
+.photo-task-check{width:18px;height:18px;border-radius:50%;border:1.5px solid #C7C7CC;flex-shrink:0;cursor:pointer;accent-color:#007AFF}
+.photo-task-text{font-size:13px;color:#1D1D1F;flex:1}
+.photo-task-cat{font-size:10px;padding:2px 7px;border-radius:999px;flex-shrink:0}
+.btn-photo-add-all{width:100%;border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:600;background:#30D158;color:#fff;cursor:pointer;font-family:inherit;margin-top:10px}
+.photo-status{font-size:13px;color:#86868B;text-align:center;padding:12px;display:none}
+.photo-status.visible{display:block}
+.btn-import-photo{border:1px solid #E5E5EA;border-radius:8px;padding:9px 12px;font-size:13px;color:#1D1D1F;background:#fff;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;transition:all .15s;white-space:nowrap}
+.btn-import-photo:hover{background:#F2F2F7;border-color:#C7C7CC}
 </style>
 </head>
 <body>
@@ -259,6 +289,36 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
+
+
+<!-- Modal import photo -->
+<div class="photo-modal hidden" id="photo-modal">
+  <div class="photo-sheet">
+    <h3>📸 Importer une liste</h3>
+    <p>Prends en photo ou importe une liste manuscrite — Claude extrait les tâches automatiquement.</p>
+
+    <div class="photo-drop-zone" id="photo-drop-zone">
+      <input type="file" id="photo-input" accept="image/*" capture="environment" onchange="onPhotoSelected(this)"/>
+      <div id="photo-drop-content">
+        <div class="photo-drop-icon">📷</div>
+        <div class="photo-drop-label">Appuie pour prendre une photo</div>
+        <div class="photo-drop-sub">ou importer depuis ta galerie</div>
+      </div>
+      <img class="photo-preview" id="photo-preview"/>
+    </div>
+
+    <div class="photo-status" id="photo-status">⏳ Analyse en cours...</div>
+
+    <div class="photo-results" id="photo-results"></div>
+
+    <div class="photo-actions" id="photo-actions">
+      <button class="btn-photo-cancel" onclick="closePhotoModal()">Annuler</button>
+      <button class="btn-photo-analyze" id="btn-analyze" onclick="analyzePhoto()" disabled>
+        ✨ Analyser avec l'IA
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- Modal édition -->
 <div class="edit-modal hidden" id="edit-modal">
@@ -1473,7 +1533,10 @@ function renderBacklog(){
   else{
     const locLabel=newTaskLocName?`📍 Lieu épinglé ✓`:'📍 Épingler sur la carte (optionnel)';
     h+=`<div class="add-box">
-      <div class="add-row"><input type="text" id="new-task-inp" placeholder="Nouvelle tâche..." onkeydown="if(event.key==='Enter')addTask()"/></div>
+      <div class="add-row">
+        <input type="text" id="new-task-inp" placeholder="Nouvelle tâche..." onkeydown="if(event.key==='Enter')addTask()"/>
+        <button class="btn-import-photo" onclick="openPhotoModal()" title="Importer une photo">📸</button>
+      </div>
       <div class="add-row"><button class="btn-map${newTaskLocName?' selected':''}" onclick="openMap()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
         ${locLabel}
@@ -1544,6 +1607,189 @@ function renderMoments(){
     h+=`</div></div>`;
   });
   document.getElementById('tab-moments').innerHTML=h;
+}
+
+
+// ── Import photo ──────────────────────────────────────────────
+let photoBase64 = null;
+let extractedTasks = [];
+
+function openPhotoModal(){
+  document.getElementById('photo-modal').classList.remove('hidden');
+  photoBase64 = null;
+  extractedTasks = [];
+  document.getElementById('photo-preview').classList.remove('visible');
+  document.getElementById('photo-preview').src = '';
+  document.getElementById('photo-drop-content').style.display = 'block';
+  document.getElementById('photo-results').innerHTML = '';
+  document.getElementById('photo-status').classList.remove('visible');
+  document.getElementById('btn-analyze').disabled = true;
+  document.getElementById('photo-actions').style.display = 'flex';
+  const addBtn = document.getElementById('btn-add-all');
+  if(addBtn) addBtn.remove();
+}
+
+function closePhotoModal(){
+  document.getElementById('photo-modal').classList.add('hidden');
+}
+
+function onPhotoSelected(input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    // Extraire base64 sans le prefix
+    photoBase64 = dataUrl.split(',')[1];
+    // Afficher la preview
+    const preview = document.getElementById('photo-preview');
+    preview.src = dataUrl;
+    preview.classList.add('visible');
+    document.getElementById('photo-drop-content').style.display = 'none';
+    document.getElementById('btn-analyze').disabled = false;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function analyzePhoto(){
+  if(!photoBase64) return;
+  const btn = document.getElementById('btn-analyze');
+  btn.disabled = true;
+  btn.textContent = '⏳ Analyse...';
+  document.getElementById('photo-status').classList.add('visible');
+  document.getElementById('photo-results').innerHTML = '';
+
+  // Récupérer la clé Claude depuis localStorage ou demander
+  const claudeKey = localStorage.getItem('claude_api_key');
+  if(!claudeKey){
+    const key = prompt('Entre ta clé API Anthropic (sk-ant-...) :');
+    if(!key){btn.disabled=false;btn.textContent='✨ Analyser avec l\'IA';return;}
+    localStorage.setItem('claude_api_key', key);
+  }
+
+  try{
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': localStorage.getItem('claude_api_key'),
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: 'image/jpeg',
+                data: photoBase64
+              }
+            },
+            {
+              type: 'text',
+              text: `Analyse cette image qui contient une liste de tâches (manuscrite ou imprimée).
+Extrais TOUTES les tâches visibles.
+Pour chaque tâche retourne :
+- text : le texte exact de la tâche (max 80 chars)
+- cat : "perso" | "travail" | "courses" | "sante" | "autre"
+- moment : "matin" | "apresmidi" | "soir"
+- lieu : nom du lieu si mentionné, sinon null
+
+Réponds UNIQUEMENT en JSON valide sans backticks :
+{"tasks": [{"text":"...","cat":"...","moment":"...","lieu":null}]}`
+            }
+          ]
+        }]
+      })
+    });
+
+    const data = await res.json();
+    if(data.error) throw new Error(data.error.message);
+    const raw = data.content?.map(c => c.text || '').join('') || '';
+    const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    extractedTasks = parsed.tasks || [];
+
+    if(!extractedTasks.length){
+      document.getElementById('photo-status').textContent = '❌ Aucune tâche détectée dans cette image.';
+      btn.disabled = false;
+      btn.textContent = '✨ Réessayer';
+      return;
+    }
+
+    // Afficher les tâches extraites avec cases à cocher
+    document.getElementById('photo-status').classList.remove('visible');
+    const resultsEl = document.getElementById('photo-results');
+    resultsEl.innerHTML = `
+      <div style="font-size:12px;font-weight:600;color:#86868B;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">
+        ${extractedTasks.length} tâche${extractedTasks.length>1?'s':''} détectée${extractedTasks.length>1?'s':''}
+      </div>
+      ${extractedTasks.map((t,i) => `
+        <div class="photo-task-item">
+          <input type="checkbox" class="photo-task-check" id="pt-${i}" checked/>
+          <span class="photo-task-text">${t.text}</span>
+          <span class="photo-task-cat cpill cat-${t.cat}">${catLabel(t.cat)}</span>
+        </div>
+      `).join('')}
+    `;
+
+    // Bouton ajouter tout
+    document.getElementById('photo-actions').innerHTML = `
+      <button class="btn-photo-cancel" onclick="closePhotoModal()">Annuler</button>
+      <button class="btn-photo-add-all" onclick="addPhotoTasks()" style="flex:1;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:600;background:#30D158;color:#fff;cursor:pointer;font-family:inherit">
+        ✅ Ajouter les tâches sélectionnées
+      </button>
+    `;
+
+  }catch(e){
+    document.getElementById('photo-status').textContent = '❌ Erreur : ' + (e.message||'Réessaie');
+    console.error(e);
+    if(e.message?.includes('401')) localStorage.removeItem('claude_api_key');
+  }
+
+  btn.disabled = false;
+  btn.textContent = '✨ Analyser avec l\'IA';
+}
+
+async function addPhotoTasks(){
+  const checked = extractedTasks.filter((t,i) => {
+    const cb = document.getElementById(`pt-${i}`);
+    return cb && cb.checked;
+  });
+  if(!checked.length) return;
+
+  for(const t of checked){
+    if(tasks.length >= MAX) break;
+    const newTask = {
+      id: Date.now()+Math.random(),
+      text: t.text,
+      cat: t.cat||'autre',
+      moment: t.moment||'matin',
+      locName: t.lieu||'',
+      coords: null,
+      inFocus: false,
+      done: false,
+      position: Date.now(),
+      nearby: false,
+      dist: null
+    };
+    tasks.push(newTask);
+    await addTaskDB(newTask);
+  }
+
+  closePhotoModal();
+  render();
+
+  // Notification succès
+  const nb = checked.length;
+  const notif = document.createElement('div');
+  notif.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#30D158;color:#fff;border-radius:10px;padding:10px 20px;font-size:14px;font-weight:500;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,.15)';
+  notif.textContent = `✅ ${nb} tâche${nb>1?'s':''} ajoutée${nb>1?'s':''}`;
+  document.body.appendChild(notif);
+  setTimeout(()=>notif.remove(), 3000);
 }
 
 // ── Edition ───────────────────────────────────────────────────

@@ -1666,7 +1666,7 @@ async function analyzePhoto(){
   const promptText = 'Analyse cette image contenant une liste de taches. Extrais TOUTES les taches. Pour chaque tache : text (max 80 chars), cat (perso|travail|courses|sante|autre), moment (matin|apresmidi|soir), lieu (null si absent). JSON uniquement sans backticks : {"tasks":[{"text":"...","cat":"...","moment":"...","lieu":null}]}';
 
   try{
-    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+geminiKey, {
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key='+geminiKey, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({

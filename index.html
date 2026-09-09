@@ -1449,6 +1449,7 @@ function addTask(){
     cat:document.getElementById('new-cat-sel').value,
     moment:document.getElementById('new-moment-sel').value,
     locName:newTaskLocName||'',coords:newTaskCoords||null,
+    position:tasks.length,
     inFocus:false,done:false,nearby:false,dist:null};
   tasks.push(t);
   inp.value='';newTaskCoords=null;newTaskLocName=null;
@@ -1741,7 +1742,7 @@ async function addPhotoTasks(){
       coords: null,
       inFocus: false,
       done: false,
-      position: Date.now(),
+      position: tasks.length,
       nearby: false,
       dist: null
     };

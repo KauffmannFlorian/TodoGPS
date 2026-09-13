@@ -298,11 +298,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <p>Prends en photo ou importe une liste manuscrite — Claude extrait les tâches automatiquement.</p>
 
     <div class="photo-drop-zone" id="photo-drop-zone">
-      <input type="file" id="photo-input" accept="image/*" capture="environment" onchange="onPhotoSelected(this)"/>
+      <input type="file" id="photo-input" accept="image/*" onchange="onPhotoSelected(this)"/>
       <div id="photo-drop-content">
         <div class="photo-drop-icon">📷</div>
-        <div class="photo-drop-label">Appuie pour prendre une photo</div>
-        <div class="photo-drop-sub">ou importer depuis ta galerie</div>
+        <div class="photo-drop-label">Appuie pour choisir une image</div>
+        <div class="photo-drop-sub">Galerie, fichiers ou appareil photo</div>
       </div>
       <img class="photo-preview" id="photo-preview"/>
     </div>
@@ -553,7 +553,7 @@ function checkSession(){
 
 // ── App state
 const GEMINI_KEY = 'AQ.Ab8RN6JjZZZBvYe4LCI84ryyl4B6jUzW3SBWUgaJNxrlm1TomQ';
-const MAX=10, RADIUS=500, TILE=256;
+const MAX=1000, RADIUS=500, TILE=256;
 const MOMENTS=['matin','apresmidi','soir'];
 const ML={matin:'Matin',apresmidi:'Après-midi',soir:'Soir'};
 const MI={matin:{bg:'#FEF3E2',icon:'🌅'},apresmidi:{bg:'#E8F0FF',icon:'☀️'},soir:{bg:'#EDEDF8',icon:'🌙'}};
